@@ -1,0 +1,138 @@
+/* Main container */
+.login-container {
+  
+  padding: 40px 100px;
+  background: #ffffff;
+  font-family: "Poppins", sans-serif;
+}
+
+/* Title */
+.login-title {
+  font-size: 28px;
+  margin-bottom: 25px;
+  font-weight: 600;
+    text-align: start;
+}
+
+/* Wrapper for two cards */
+.login-wrapper {
+  display: flex;
+  gap: 30px;
+}
+
+/* Individual cards */
+.login-card {
+  background: #F5F7FF;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.06);
+  flex: 1; /* Make cards flexible */
+  min-width: 300px;
+  /* width: 564px;
+  height: 415.46px; */
+}
+
+/* .left-card {
+  
+  
+} */
+
+.right-card {
+  background: #f2f6ff;
+  text-align: start;
+  padding-left: 60px;
+}
+
+/* Labels */
+label {
+  font-size: 14px;
+  font-weight: 500;
+  display: block;
+  text-align: start;
+  margin-top: 15px;
+  width: 80%;
+  margin-left: 50px;
+}
+
+/* Inputs */
+input {
+  width: 80%;
+  padding: 12px;
+  margin-top: 6px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  outline: none;
+}
+
+input:focus {
+  border-color: #1e90ff;
+}
+
+/* Error message */
+.error {
+  font-size: 12px;
+  color: red;
+}
+
+/* Buttons */
+.btn-primary {
+  width: 25%;
+  padding: 14px 30px;
+  background-color: #0156FF;
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  border-radius: 20px;
+  margin-top: 20px;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background-color: #1474d2;
+}
+
+.btn-secondary {
+  padding: 14px 30px;
+  background-color: #0156FF;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-weight: 600;
+  margin-top: 20px;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background-color: #1474d2;
+}
+
+/* Forgot section */
+.forgot {
+    padding-top: 5px;
+  font-size: 13px;
+  color: #0156FF;
+  cursor: pointer;
+    text-align: center;
+    margin: 30px 0px 0 20px;
+}
+
+.forgot:hover {
+  text-decoration: underline;
+}
+.button-container {
+  display: flex;
+  margin-left: 50px;
+    
+}
+/* Responsive */
+@media (max-width: 900px) {
+  .login-wrapper {
+    flex-direction: column;
+  }
+  .login-card {
+    width: 100%;
+  }
+  .login-container {
+    padding: 20px;
+  }
+}
