@@ -6,13 +6,13 @@ const Footer = () => {
   return (
     <footer className="footer">
 
-      {/* Newsletter Section */}
+     
       <div className="newsletter">
         <h2>Sign Up To Our ElectroByte</h2>
         <p>Be the first to hear about the latest offers.</p>
       </div>
 
-      {/* Footer Content */}
+      
       <div className="footer-grid">
 
         {/* Column 1 */}
