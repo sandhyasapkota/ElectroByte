@@ -1,98 +1,96 @@
 import React from "react";
-import "./Footer.css";
+
 import { FaFacebook, FaTwitter, FaInstagram, FaYoutube, FaDiscord } from "react-icons/fa";
 
 const Footer = () => {
   return (
-    <footer className="footer">
+    <footer className="bg-black text-white p-[30px] lg:py-[50px] lg:px-[100px] font-['Poppins',_sans-serif]">
 
-     
-      <div className="newsletter">
-        <h2>Sign Up To Our ElectroByte</h2>
-        <p>Be the first to hear about the latest offers.</p>
+      <div className="text-center sm:text-left mb-[30px]">
+        <h2 className="text-[22px] mb-[5px]">Sign Up To Our ElectroByte</h2>
+        <p className="text-sm text-[#cccccc]">Be the first to hear about the latest offers.</p>
       </div>
 
-      
-      <div className="footer-grid">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-10">
 
         {/* Column 1 */}
-        <div className="footer-col">
-          <h3>Information</h3>
-          <ul>
-            <li>About Us</li>
-            <li>About Zip</li>
-            <li>Privacy Policy</li>
-            <li>Search</li>
-            <li>Terms</li>
-            <li>Orders and Returns</li>
-            <li>Contact Us</li>
-            <li>Advanced Search</li>
+        <div>
+          <h3 className="text-base font-semibold mb-[15px]">Information</h3>
+          <ul className="list-none p-0">
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">About Us</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">About Zip</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">Privacy Policy</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">Search</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">Terms</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">Orders and Returns</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">Contact Us</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">Advanced Search</li>
           </ul>
         </div>
 
         {/* Column 2 */}
-        <div className="footer-col">
-          <h3>PC Parts</h3>
-          <ul>
-            <li>CPUs</li>
-            <li>Add On Cards</li>
-            <li>Hard Drives (Internal)</li>
-            <li>Graphic Cards</li>
-            <li>Keyboards / Mice</li>
-            <li>Cases / Power Supplies / Cooling</li>
-            <li>RAM (Memory)</li>
-            <li>Software</li>
-            <li>Speakers / Headsets</li>
-            <li>Motherboards</li>
+        <div>
+          <h3 className="text-base font-semibold mb-[15px]">PC Parts</h3>
+          <ul className="list-none p-0">
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">CPUs</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">Add On Cards</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">Hard Drives (Internal)</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">Graphic Cards</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">Keyboards / Mice</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">Cases / Power Supplies / Cooling</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">RAM (Memory)</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">Software</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">Speakers / Headsets</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">Motherboards</li>
           </ul>
         </div>
 
         {/* Column 3 */}
-        <div className="footer-col">
-          <h3>Desktop PCs</h3>
-          <ul>
-            <li>Custom PCs</li>
-            <li>Servers</li>
-            <li>MSI All-In-One PCs</li>
-            <li>HP/Compaq PCs</li>
-            <li>ASUS PCs</li>
-            <li>Tecs PCs</li>
-            <li>Laptops</li>
-            <li>Everyday Use Notebooks</li>
-            <li>MSI Workstation Series</li>
-            <li>MSI Prestige Series</li>
-            <li>Tablets and Pads</li>
-            <li>Netbooks</li>
-            <li>Infinity Gaming Notebooks</li>
+        <div>
+          <h3 className="text-base font-semibold mb-[15px]">Desktop PCs</h3>
+          <ul className="list-none p-0">
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">Custom PCs</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">Servers</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">MSI All-In-One PCs</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">HP/Compaq PCs</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">ASUS PCs</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">Tecs PCs</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">Laptops</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">Everyday Use Notebooks</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">MSI Workstation Series</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">MSI Prestige Series</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">Tablets and Pads</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">Netbooks</li>
+            <li className="text-[13px] mb-2 text-[#cccccc] cursor-pointer hover:text-[#1e90ff]">Infinity Gaming Notebooks</li>
           </ul>
         </div>
 
         {/* Column 4 - Address */}
-        <div className="footer-col">
-          <h3>Address</h3>
-          <ul>
-            <li>Address: Newroad</li>
-            <li>Phones: 9705439512</li>
-            <li>We are open:</li>
-            <li>Mon–Thu: 9:00 AM - 5:30 PM</li>
-            <li>Friday: 9:00 AM - 6:00 PM</li>
-            <li>Saturday: 11:00 AM - 5:00 PM</li>
-            <li>Email: electrobyte@email.com</li>
+        <div>
+          <h3 className="text-base font-semibold mb-[15px]">Address</h3>
+          <ul className="list-none p-0">
+            <li className="text-[13px] mb-2 text-[#cccccc]">Address: Newroad</li>
+            <li className="text-[13px] mb-2 text-[#cccccc]">Phones: 9705439512</li>
+            <li className="text-[13px] mb-2 text-[#cccccc]">We are open:</li>
+            <li className="text-[13px] mb-2 text-[#cccccc]">Mon–Thu: 9:00 AM - 5:30 PM</li>
+            <li className="text-[13px] mb-2 text-[#cccccc]">Friday: 9:00 AM - 6:00 PM</li>
+            <li className="text-[13px] mb-2 text-[#cccccc]">Saturday: 11:00 AM - 5:00 PM</li>
+            <li className="text-[13px] mb-2 text-[#cccccc]">Email: electrobyte@email.com</li>
           </ul>
         </div>
 
       </div>
 
       {/* Social Icons */}
-      <div className="footer-social">
-        <FaFacebook />
-        <FaInstagram />
-        <FaTwitter />
-        <FaYoutube />
-        <FaDiscord />
+      <div className="flex justify-center sm:justify-start gap-5 text-[22px] mb-5">
+        <FaFacebook className="cursor-pointer hover:text-[#1e90ff]" />
+        <FaInstagram className="cursor-pointer hover:text-[#1e90ff]" />
+        <FaTwitter className="cursor-pointer hover:text-[#1e90ff]" />
+        <FaYoutube className="cursor-pointer hover:text-[#1e90ff]" />
+        <FaDiscord className="cursor-pointer hover:text-[#1e90ff]" />
       </div>
 
-      <p className="copyright">
+      <p className="text-[13px] text-[#888]">
         Copyright © 2020 Shop Pty. Ltd.
       </p>
 
