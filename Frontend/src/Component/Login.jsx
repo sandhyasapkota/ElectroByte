@@ -1,5 +1,9 @@
 import React, { useState } from "react";
+<<<<<<< HEAD:Frontend/src/Component/Login.jsx
 // import "./Register.css";
+=======
+import "./Login.css";
+>>>>>>> e3fec5b0d54b1c90935fd51ce8a4707241d9a7ac:src/Component/Login.js
 
 const Login = () => {
   const [formData, setFormData] = useState({
