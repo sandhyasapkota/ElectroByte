@@ -1,21 +1,21 @@
 import React from 'react'; // Import React to use JSX for icons
 import { FaQuestionCircle, FaUserShield, FaTags } from 'react-icons/fa'; // Import icons
 
-// --- Import all images needed for the data ---
-import banner from "../Images/banner.png";
-import laptop from "../Images/laptop.png";
-import legion from "../Images/legion.png";
-import customBuildsBanner from "../Images/customBuildsBanner.png";
-import laptopsBanner from "../Images/laptopsBanner.png";
-import desktopsBanner from "../Images/desktopsBanner.png";
-import monitorsBanner from "../Images/monitorsBanner.png";
-import pcCase from "../Images/pcCase.png";
-import monitor from "../Images/monitor.png";
-import brandMsi from '../Images/brandMsi.png';
-import brandRazer from '../Images/brandRazer.png';
-import brandGigabyte from '../Images/brandGigabyte.png';
-import insta1 from '../Images/insta1.png';
-import insta2 from '../Images/insta2.png';
+// --- Updated image paths to assets/images ---
+import banner from "../assets/images/banner.png";
+import laptop from "../assets/images/laptop.png";
+import legion from "../assets/images/legion.png";
+import customBuildsBanner from "../assets/images/customBuildsBanner.png";
+import laptopsBanner from "../assets/images/laptopsBanner.png";
+import desktopsBanner from "../assets/images/desktopsBanner.png";
+import monitorsBanner from "../assets/images/monitorsBanner.png";
+import pcCase from "../assets/images/pcCase.png";
+import monitor from "../assets/images/monitor.png";
+import brandMsi from '../assets/images/brandMsi.png';
+import brandRazer from '../assets/images/brandRazer.png';
+import brandGigabyte from '../assets/images/brandGigabyte.png';
+import insta1 from '../assets/images/insta1.png';
+import insta2 from '../assets/images/insta2.png';
 
 // --- Define all your product data here ---
 const newProducts = [

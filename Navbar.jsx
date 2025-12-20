@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 // import "./Navbar.css"; // You can remove this import
 import { FaSearch, FaUser, FaShoppingCart, FaBars, FaTimes } from "react-icons/fa";
-import Electrobyte from "../Images/Electrobyte.png";
+import Electrobyte from "../assets/images/Electrobyte.png";
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
