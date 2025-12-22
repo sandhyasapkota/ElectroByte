@@ -12,10 +12,10 @@ const createUser = async (req, res) => {
   try {
     const body = req.body;
     console.log(body);
-    if (!body.name || !body.email) {
-      return res.status(400).json({ error: "Name and Email are required" });
+    if (!body.username || !body.email) {
+      return res.status(400).json({ error: "Username and Email are required" });
     }
-    const newUser = await User.create({ name: body.name, email: body.email });
+    const newUser = await User.create({ username: body.username, email: body.email, password: body.password, role: body.role });
     res.status(201).json({ data: newUser, message: "User created successfully" });
   } catch (error) {
     res.status(500).json({ error: "Failed to create user" });
