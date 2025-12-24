@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { FaUser, FaShoppingBag, FaHeart, FaMapMarkerAlt, FaStar, FaCamera, FaCheckCircle } from "react-icons/fa";
-import Navbar from "./Navbar";
-import Footer from "./Footer";
+import Navbar from "../Component/Navbar";
+import Footer from "../Component/Footer";
 
 const UserProfile = () => {
   const [activeTab, setActiveTab] = useState("Account Dashboard");

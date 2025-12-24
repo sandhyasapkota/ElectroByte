@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { FaShoppingCart, FaStar, FaHeart, FaThLarge, FaList, FaChevronDown } from "react-icons/fa";
-import Navbar from "./Navbar";
-import Footer from "./Footer";
+import Navbar from "../Component/Navbar";
+import Footer from "../Component/Footer";
 
 const ProductCatalog = () => {
   const [viewMode, setViewMode] = useState("grid");

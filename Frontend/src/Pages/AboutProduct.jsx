@@ -14,8 +14,8 @@ import {
   FaDesktop
 } from "react-icons/fa";
 import { SiIntel, SiNvidia, SiAmd } from "react-icons/si";
-import Navbar from "./Navbar";
-import Footer from "./Footer";
+import Navbar from "../src/Component/Navbar";
+import Footer from "../src/Component/Footer";
 
 const AboutProduct = () => {
   const [quantity, setQuantity] = useState(1);
