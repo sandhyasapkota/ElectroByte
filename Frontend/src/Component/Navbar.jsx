@@ -1,16 +1,17 @@
 import React, { useState } from "react";
-// import "./Navbar.css"; // You can remove this import
+import { useNavigate } from "react-router-dom";
 import { FaSearch, FaUser, FaShoppingCart, FaBars, FaTimes } from "react-icons/fa";
 import Electrobyte from "../assets/images/Electrobyte.png";
 
 const Navbar = () => {
+  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <header className="bg-white border-b border-[#e5e5e5] py-3 px-[50px] flex items-center justify-between font-['Poppins',_sans-serif] sticky top-0 z-[1000]">
 
       {/* Logo */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/home")}>
         <img src={Electrobyte} alt="Electrobyte" className="logo-image" />
         <span className="text-lg font-semibold">ElectroByte</span>
       </div>
@@ -30,7 +31,7 @@ const Navbar = () => {
       <div className="flex items-center gap-[18px] text-lg">
         <FaSearch className="cursor-pointer" />
         <FaShoppingCart className="cursor-pointer" />
-        <FaUser className="cursor-pointer" />
+        <FaUser className="cursor-pointer" onClick={() => navigate("/profile")} />
 
         {/* Mobile Menu Icon */}
         <div className="block md:hidden text-[22px] cursor-pointer" onClick={() => setMenuOpen(!menuOpen)}>

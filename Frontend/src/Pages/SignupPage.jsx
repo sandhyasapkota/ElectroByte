@@ -1,6 +1,8 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const SignupPage = () => {
+  const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -14,7 +16,13 @@ const SignupPage = () => {
     if (!email) newErrors.email = "Please fill the required field";
     if (!password) newErrors.password = "Please fill the required field";
 
-    setErrors(newErrors);
+    if (Object.keys(newErrors).length === 0) {
+      // If no errors, process signup and navigate to login
+      console.log("Signup successful", { username, email, password });
+      navigate("/login");
+    } else {
+      setErrors(newErrors);
+    }
   };
 
   return (
@@ -102,7 +110,10 @@ const SignupPage = () => {
             <li>Track orders and more</li>
           </ul>
 
-          <button className="bg-blue-600 text-white px-6 py-2 rounded-full font-medium hover:bg-blue-700 transition">
+          <button 
+            onClick={() => navigate("/login")}
+            className="bg-blue-600 text-white px-6 py-2 rounded-full font-medium hover:bg-blue-700 transition"
+          >
             Sign In
           </button>
         </div>
