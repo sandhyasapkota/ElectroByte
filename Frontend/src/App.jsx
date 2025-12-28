@@ -7,6 +7,7 @@ import ProductCatalog from './Pages/ProductCatalog';
 import SignupPage from './Pages/SignupPage';
 import Login from './Pages/Login';
 import UserProfile from './Pages/UserProfile';
+import FAQ from './Pages/FAQ';
 
 function App() {
   return (
