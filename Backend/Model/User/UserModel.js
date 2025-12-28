@@ -7,29 +7,36 @@ const User = sequelize.define("User", {
     primaryKey: true,
     autoIncrement: true,
   },
-    username: {
+  username: {
     type: DataTypes.STRING,
     allowNull: false,
     unique: true,
-    },
-
-    email: {
+  },
+  email: {
     type: DataTypes.STRING,
     allowNull: false,
     unique: true,
     validate: {
-        isEmail: true,
+      isEmail: true,
     },
-    },
-    password: {
+  },
+  password: {
     type: DataTypes.STRING,
     allowNull: false,
-    },
-    role: {
+  },
+  role: {
     type: DataTypes.STRING,
     allowNull: false,
     defaultValue: "user",
-    },
+  },
+  address: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  profileImage: {
+    type: DataTypes.TEXT, // Store as base64 or URL
+    allowNull: true,
+  },
 }, {
   tableName: "users",
   timestamps: true,
