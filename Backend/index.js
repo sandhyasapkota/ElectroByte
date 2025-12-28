@@ -6,7 +6,7 @@ import {productRoute} from './Routes/index.js';
 import {authRouter} from './Routes/index.js';
 import dotenv from 'dotenv';
 dotenv.config();
-import {testConnection} from './Database/db.js';
+import {testConnection, sequelize} from './Database/db.js';
 import { authenticateToken } from './Middleware/token-middleware.js';
 
 const app = express();
@@ -22,9 +22,13 @@ app.use('/api/users', UserRoute);
 app.use('/api/products',productRoute);
 app.use('/api', authRouter);
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Server is running on port ${PORT}`);
-  testConnection();
+  await testConnection();
+  
+  // Force sync - WARNING: This will drop and recreate tables!
+  await sequelize.sync({ force: true });
+  console.log("✅ Database synced!");
 });
 
 export default app;

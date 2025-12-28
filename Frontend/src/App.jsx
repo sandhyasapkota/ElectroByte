@@ -11,14 +11,15 @@ import UserProfile from './Pages/UserProfile';
 function App() {
   return (
     <Router>
+      
       <Routes>
         <Route path="/" element={<SignupPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/home" element={<HomePage />} />
         <Route path="/products" element={<ProductCatalog />} />
-        <Route path="*" element={<UserProfile />} />
-        
+        <Route path="/profile" element={<UserProfile />} />
       </Routes>
+      
     </Router>
   );
 }
