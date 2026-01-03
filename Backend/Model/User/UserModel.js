@@ -24,8 +24,12 @@ const User = sequelize.define("User", {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  role: {
+  phone: {
     type: DataTypes.STRING,
+    allowNull: true,
+  },
+  role: {
+    type: DataTypes.ENUM('user', 'admin', 'technician'),
     allowNull: false,
     defaultValue: "user",
   },
@@ -34,8 +38,32 @@ const User = sequelize.define("User", {
     allowNull: true,
   },
   profileImage: {
-    type: DataTypes.TEXT, // Store as base64 or URL
+    type: DataTypes.TEXT,
     allowNull: true,
+  },
+  isEmailVerified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+  emailVerificationToken: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  emailVerificationExpires: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
+  passwordResetToken: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  passwordResetExpires: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
+  isBlocked: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
   },
 }, {
   tableName: "users",
