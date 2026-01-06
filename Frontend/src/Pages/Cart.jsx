@@ -65,6 +65,26 @@ const Cart = () => {
     }
   };
 
+  const removeItem = async (id) => {
+    try {
+      await cartAPI.remove(id);
+      fetchCart();
+      toast.success("Item removed from cart!");
+    } catch (err) {
+      toast.error(err.message || "Failed to remove item");
+    }
+  };
+
+  const clearCart = async () => {
+    try {
+      await cartAPI.clear();
+      setCartItems([]);
+      setSubtotal(0);
+      toast.success("Cart cleared!");
+    } catch (err) {
+      toast.error(err.message || "Failed to clear cart");
+    }
+  };
 
   if (loading) {
     return (
