@@ -154,7 +154,42 @@ const Cart = () => {
               </div>
 
               {/* Order Summary */}
-
+              <div className="lg:col-span-1">
+                <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 sticky top-24">
+                  <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                    <span className="w-1.5 h-6 bg-gradient-to-b from-blue-600 to-purple-600 rounded-full"></span>
+                    Order Summary
+                  </h2>
+                  <div className="space-y-3 mb-6">
+                    <div className="flex justify-between text-gray-600">
+                      <span>Subtotal</span>
+                      <span>NPR {subtotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-600">
+                      <span>Shipping</span>
+                      <span className="text-green-600 font-medium">Free</span>
+                    </div>
+                    <hr className="my-4" />
+                    <div className="flex justify-between font-bold text-lg">
+                      <span>Total</span>
+                      <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">NPR {subtotal.toFixed(2)}</span>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => navigate("/checkout")}
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all"
+                  >
+                    Proceed to Checkout
+                  </button>
+                  <Link 
+                    to="/products" 
+                    className="flex items-center justify-center gap-2 text-blue-600 mt-4 hover:text-purple-600 font-medium transition-colors"
+                  >
+                    <FaArrowLeft className="text-sm" />
+                    Continue Shopping
+                  </Link>
+                </div>
+              </div>
             </div>
           )}
         </div>
