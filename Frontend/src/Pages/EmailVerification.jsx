@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { authAPI } from "../services/api";
-import { FaCheckCircle, FaTimesCircle, FaSpinner, FaEnvelope, FaLaptop } from "react-icons/fa";
+import { FaCheckCircle, FaTimesCircle, FaSpinner, FaEnvelope } from "react-icons/fa";
+import logo from "../assets/Images/logo.png";
 
 const EmailVerification = () => {
   const { token } = useParams();
@@ -20,7 +21,9 @@ const EmailVerification = () => {
 
   const verifyEmail = async () => {
     try {
+      console.log("Verifying email with token:", token);
       const response = await authAPI.verifyEmail(token);
+      console.log("Verification response:", response);
       setStatus("success");
       setMessage(response.message || "Email verified successfully!");
       
@@ -29,8 +32,21 @@ const EmailVerification = () => {
         navigate("/login");
       }, 3000);
     } catch (error) {
-      setStatus("error");
-      setMessage(error.message || "Failed to verify email. The link may be expired or invalid.");
+      console.error("Verification error:", error);
+      
+      // Check if it's a network error vs actual verification error
+      const errorMessage = error.message || "";
+      
+      if (errorMessage.includes("Network error") || errorMessage.includes("fetch")) {
+        setStatus("error");
+        setMessage("Unable to connect to server. Please check your internet connection and try again.");
+      } else if (errorMessage.includes("expired")) {
+        setStatus("error");
+        setMessage("Verification link has expired. Please request a new verification email.");
+      } else {
+        setStatus("error");
+        setMessage(errorMessage || "Failed to verify email. Please try again or request a new verification link.");
+      }
     }
   };
 
@@ -134,8 +150,8 @@ const EmailVerification = () => {
       <div className="max-w-md w-full">
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 text-center">
           {/* Logo */}
-          <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <FaLaptop className="text-3xl text-white" />
+          <div className="mx-auto mb-6">
+            <img src={logo} alt="ElectroByte" className="w-20 h-20 rounded-full object-cover mx-auto" />
           </div>
 
           {status === "loading" && (
