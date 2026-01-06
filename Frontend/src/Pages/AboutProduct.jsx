@@ -686,7 +686,142 @@ const AboutProduct = () => {
                           Based on {totalReviews} reviews
                         </p>
                         
-                       
+                        {/* Write Review Button */}
+                        <button
+                          onClick={() => {
+                            const token = sessionStorage.getItem("access_token");
+                            if (!token) {
+                              navigate("/login");
+                              return;
+                            }
+                            setShowReviewModal(true);
+                          }}
+                          className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2.5 rounded-lg font-medium hover:opacity-90 transition flex items-center gap-2 mx-auto"
+                        >
+                          <FaPen />
+                          Write a Review
+                        </button>
+                      </div>
+
+                      {/* Rating Breakdown */}
+                      <div className="flex-1">
+                        {[5, 4, 3, 2, 1].map((stars) => {
+                          const count = reviews.filter(r => r.rating === stars).length;
+                          const percentage = totalReviews > 0 ? (count / totalReviews) * 100 : 0;
+                          return (
+                            <div key={stars} className="flex items-center gap-3 mb-2">
+                              <span className="text-sm text-gray-600 w-12">
+                                {stars} star
+                              </span>
+                              <div className="flex-1 bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className="bg-yellow-400 h-2 rounded-full transition-all"
+                                  style={{ width: `${percentage}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-sm text-gray-600 w-12 text-right">
+                                {count}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Review List */}
+                    <div className="space-y-6">
+                      <h3 className="text-lg font-semibold text-gray-900">Customer Reviews</h3>
+                      
+                      {loadingReviews ? (
+                        <div className="text-center py-8">
+                          <FaSpinner className="animate-spin text-2xl text-blue-600 mx-auto" />
+                        </div>
+                      ) : reviews.length === 0 ? (
+                        <div className="text-center py-12 bg-gray-50 rounded-lg">
+                          <FaStar className="text-4xl text-gray-300 mx-auto mb-3" />
+                          <p className="text-gray-500 mb-4">No reviews yet. Be the first to review this product!</p>
+                          <button
+                            onClick={() => {
+                              const token = sessionStorage.getItem("access_token");
+                              if (!token) {
+                                navigate("/login");
+                                return;
+                              }
+                              setShowReviewModal(true);
+                            }}
+                            className="text-blue-600 font-medium hover:underline"
+                          >
+                            Write a Review
+                          </button>
+                        </div>
+                      ) : (
+                        reviews.map((review) => {
+                          // Helper to get user profile image URL
+                          const getUserImageUrl = (imageUrl) => {
+                            if (!imageUrl) return null;
+                            if (imageUrl.startsWith('data:') || imageUrl.startsWith('http')) return imageUrl;
+                            return `${API_BASE}${imageUrl}`;
+                          };
+                          
+                          return (
+                          <div key={review.id} className="border-b border-gray-200 pb-6">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center overflow-hidden">
+                                {review.User?.profileImage ? (
+                                  <img 
+                                    src={getUserImageUrl(review.User.profileImage)} 
+                                    alt={review.User.username}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      e.target.style.display = 'none';
+                                      e.target.nextSibling.style.display = 'flex';
+                                    }}
+                                  />
+                                ) : null}
+                                <span 
+                                  className={`text-white font-medium ${review.User?.profileImage ? 'hidden' : 'flex'}`}
+                                  style={{ display: review.User?.profileImage ? 'none' : 'flex' }}
+                                >
+                                  {review.User?.username?.charAt(0).toUpperCase() || 'U'}
+                                </span>
+                              </div>
+                              <div>
+                                <p className="font-medium text-gray-900">
+                                  {review.User?.username || 'Anonymous User'}
+                                </p>
+                                <div className="flex items-center gap-1">
+                                  {[...Array(5)].map((_, i) => (
+                                    <FaStar 
+                                      key={i} 
+                                      className={`text-xs ${
+                                        i < review.rating ? "text-yellow-400" : "text-gray-300"
+                                      }`} 
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                            {review.comment && (
+                              <p className="text-gray-700 text-sm leading-relaxed">
+                                {review.comment}
+                              </p>
+                            )}
+                            <p className="text-xs text-gray-500 mt-2">
+                              {new Date(review.createdAt).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })}
+                            </p>
+                          </div>
+                        )})
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
 
           {/* Related Products */}
           <div className="mt-12">
