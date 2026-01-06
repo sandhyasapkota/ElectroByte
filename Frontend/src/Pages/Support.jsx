@@ -257,7 +257,95 @@ const Support = () => {
         </div>
       )}
 
-      
+      {/* Chat Modal */}
+      {showChatModal && selectedTicket && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div className="p-4 border-b flex justify-between items-center">
+              <div>
+                <h2 className="font-bold">{selectedTicket.subject}</h2>
+                <p className="text-sm text-gray-500">#{selectedTicket.ticketNumber}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className={`px-3 py-1 text-xs rounded-full capitalize ${getStatusColor(selectedTicket.status)}`}>
+                  {selectedTicket.status?.replace('_', ' ')}
+                </span>
+                <button onClick={() => setShowChatModal(false)} className="text-gray-500 hover:text-gray-700">
+                  <FaTimes />
+                </button>
+              </div>
+            </div>
+            
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+              {/* Original Message */}
+              <div className="flex justify-end">
+                <div className="bg-blue-600 text-white p-4 rounded-2xl rounded-br-none max-w-[80%]">
+                  <p>{selectedTicket.message}</p>
+                  <p className="text-xs text-blue-200 mt-2">
+                    {new Date(selectedTicket.createdAt).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+              
+              {/* Replies */}
+              {(selectedTicket.TicketReplies || []).map((reply) => (
+                <div
+                  key={reply.id}
+                  className={`flex ${reply.isAdmin ? 'justify-start' : 'justify-end'}`}
+                >
+                  <div className={`p-4 rounded-2xl max-w-[80%] ${
+                    reply.isAdmin 
+                      ? 'bg-white border shadow-sm rounded-bl-none' 
+                      : 'bg-blue-600 text-white rounded-br-none'
+                  }`}>
+                    {reply.isAdmin && (
+                      <p className="text-xs text-purple-600 font-semibold mb-1">Support Team</p>
+                    )}
+                    <p>{reply.message}</p>
+                    <p className={`text-xs mt-2 ${reply.isAdmin ? 'text-gray-400' : 'text-blue-200'}`}>
+                      {new Date(reply.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              
+              {/* Legacy admin reply */}
+              {selectedTicket.adminReply && !selectedTicket.TicketReplies?.length && (
+                <div className="flex justify-start">
+                  <div className="bg-white border shadow-sm p-4 rounded-2xl rounded-bl-none max-w-[80%]">
+                    <p className="text-xs text-purple-600 font-semibold mb-1">Support Team</p>
+                    <p>{selectedTicket.adminReply}</p>
+                    <p className="text-xs text-gray-400 mt-2">
+                      {selectedTicket.repliedAt && new Date(selectedTicket.repliedAt).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Reply Input */}
+            {selectedTicket.status !== 'closed' && selectedTicket.status !== 'resolved' && (
+              <form onSubmit={handleSendReply} className="p-4 border-t flex gap-3">
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type your message..."
+                  className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  type="submit"
+                  disabled={sending || !newMessage.trim()}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                >
+                  <FaPaperPlane /> {sending ? "Sending..." : "Send"}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
 
       <Footer />
     </>
