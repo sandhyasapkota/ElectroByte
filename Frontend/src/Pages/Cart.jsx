@@ -40,7 +40,31 @@ const Cart = () => {
     fetchCart();
   }, []);
 
-  
+  const fetchCart = async () => {
+    try {
+      const response = await cartAPI.get();
+      const items = response.data?.items || response.items || [];
+      const total = response.data?.subtotal || response.subtotal || 0;
+      setCartItems(items);
+      setSubtotal(total);
+    } catch (err) {
+      console.error('Cart fetch error:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateQuantity = async (id, quantity) => {
+    if (quantity < 1) return;
+    try {
+      await cartAPI.update(id, quantity);
+      fetchCart();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
 
   if (loading) {
     return (
