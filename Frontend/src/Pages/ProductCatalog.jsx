@@ -6,7 +6,7 @@ import { useToast } from "../Component/Toast";
 
 const API_BASE = "http://localhost:5000";
 
-// Helper to get image URL
+
 const getImageUrl = (url) => {
   if (!url) return null;
   if (url.startsWith("http")) return url;
@@ -174,46 +174,6 @@ const ProductCatalog = () => {
     }
   };
 
-  const filterProducts = (products) => {
-    let filtered = products;
-    
-    // Search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(p => 
-        p.name?.toLowerCase().includes(query) ||
-        p.description?.toLowerCase().includes(query) ||
-        p.Category?.name?.toLowerCase().includes(query) ||
-        p.Brand?.name?.toLowerCase().includes(query)
-      );
-    }
-    
-    if (selectedCategory) {
-      filtered = filtered.filter(p => p.category_id === selectedCategory);
-    }
-    if (selectedBrands.length > 0) {
-      filtered = filtered.filter(p => selectedBrands.includes(p.brand_id));
-    }
-    return filtered;
-  };
-
-  const clearSearch = () => {
-    setSearchQuery("");
-    setSearchParams({});
-  };
-
-  const displayProducts = sortProducts(filterProducts(products));
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <FaSpinner className="animate-spin text-4xl text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading products...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -237,27 +197,7 @@ const ProductCatalog = () => {
             {searchQuery ? `Showing results for "${searchQuery}"` : 'Find the perfect laptop for your needs'}
           </p>
           
-          {/* Search Bar */}
-          <div className="mt-6 max-w-xl">
-            <div className="relative">
-              <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search products..."
-                className="w-full pl-11 pr-10 py-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/30"
-              />
-              {searchQuery && (
-                <button
-                  onClick={clearSearch}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
-                >
-                  <FaTimes />
-                </button>
-              )}
-            </div>
-          </div>
+        
         </div>
       </div>
 
