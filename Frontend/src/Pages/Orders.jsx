@@ -49,7 +49,17 @@ const Orders = () => {
     }
   };
 
-
+  const cancelOrder = async (id) => {
+    if (!window.confirm("Are you sure you want to cancel this order?")) return;
+    
+    try {
+      await orderAPI.cancel(id);
+      fetchOrders();
+      toast.success("Order cancelled successfully!");
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
 
   const getStatusIcon = (status) => {
     switch (status) {
