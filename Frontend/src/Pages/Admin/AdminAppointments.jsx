@@ -53,7 +53,24 @@ const AdminAppointments = () => {
       setRefreshing(false);
     }
   };
-
+  
+  const handleAssignTechnician = async (appointmentId, technicianId) => {
+    try {
+      // Find the repair ID for this appointment
+      const appointment = appointments.find(apt => apt.id === appointmentId);
+      if (!appointment?.Repair?.id) {
+        toast.error("No repair record found for this appointment");
+        return;
+      }
+      await appointmentAPI.assignTechnician(appointment.Repair.id, technicianId);
+      fetchData();
+      setShowModal(false);
+      toast.success("Technician assigned successfully!");
+    } catch (error) {
+      console.error("Error assigning technician:", error);
+      toast.error("Failed to assign technician: " + error.message);
+    }
+  };
 
   const handleStatusUpdate = async (appointmentId, status) => {
     try {
