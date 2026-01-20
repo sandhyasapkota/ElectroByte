@@ -5,8 +5,9 @@ import {
   FaComments, FaClock, FaCheckCircle, FaSpinner
 } from "react-icons/fa";
 import { ticketAPI } from "../services/api";
+import { getToken, getUser } from "../lib/storage";
 import Navbar, { NavbarSpacer } from "../Component/Navbar";
-import Footer from "../Component/Footer";
+import Pagination, { usePagination } from "../Component/Pagination";
 
 const Support = () => {
   const navigate = useNavigate();
@@ -18,6 +19,8 @@ const Support = () => {
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
   
+  const { currentPage, totalPages, totalItems, paginatedItems: paginatedTickets, goToPage } = usePagination(tickets, 10);
+  
   const [newTicket, setNewTicket] = useState({
     subject: "",
     message: "",
@@ -27,7 +30,7 @@ const Support = () => {
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
-    const token = sessionStorage.getItem("access_token");
+    const token = getToken();
     if (!token) {
       navigate("/login");
       return;
@@ -37,7 +40,7 @@ const Support = () => {
   }, []);
 
   const loadUserInfo = () => {
-    const user = JSON.parse(sessionStorage.getItem("user") || "{}");
+    const user = getUser() || {};
     setNewTicket(prev => ({
       ...prev,
       name: user.username || "",
@@ -180,7 +183,7 @@ const Support = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {tickets.map((ticket) => (
+              {paginatedTickets.map((ticket) => (
                 <div
                   key={ticket.id}
                   className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer"
@@ -207,6 +210,14 @@ const Support = () => {
                   </div>
                 </div>
               ))}
+              
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                onPageChange={goToPage}
+                itemName="tickets"
+              />
             </div>
           )}
         </div>
@@ -346,8 +357,6 @@ const Support = () => {
           </div>
         </div>
       )}
-
-      <Footer />
     </>
   );
 };
