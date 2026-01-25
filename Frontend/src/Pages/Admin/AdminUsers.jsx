@@ -64,54 +64,120 @@ const AdminUsers = () => {
       console.error("Error toggling user block:", error);
     }
   };
-   const openRoleModal = (user) => {
-      setSelectedUser(user);
-      setNewRole(user.role);
-      setTechnicianData({ specialization: "", experience: 0 });
-      setShowRoleModal(true);
-    };
-  
-    const handleRoleChange = async () => {
-      if (!selectedUser || !newRole) return;
-      
-      setUpdating(true);
-      try {
-        if (newRole === 'technician' && selectedUser.role !== 'technician') {
-          // Promote to technician with specialization
-          await adminAPI.promoteToTechnician(selectedUser.id, technicianData);
-        } else {
-          // Just change role
-          await adminAPI.updateUserRole(selectedUser.id, newRole);
-        }
-        
-        // Update local state
-        setUsers(users.map(u => 
-          u.id === selectedUser.id ? { ...u, role: newRole } : u
-        ));
-        
-        setShowRoleModal(false);
-        setSelectedUser(null);
-      } catch (error) {
-        console.error("Error changing role:", error);
-      } finally {
-        setUpdating(false);
-      }
-    };
-  
-    const handleDeleteUser = async (userId) => {
-      if (!window.confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
-        return;
+
+  const openRoleModal = (user) => {
+    setSelectedUser(user);
+    setNewRole(user.role);
+    setTechnicianData({ specialization: "", experience: 0 });
+    setShowRoleModal(true);
+  };
+
+  const handleRoleChange = async () => {
+    if (!selectedUser || !newRole) return;
+    
+    setUpdating(true);
+    try {
+      if (newRole === 'technician' && selectedUser.role !== 'technician') {
+        // Promote to technician with specialization
+        await adminAPI.promoteToTechnician(selectedUser.id, technicianData);
+      } else {
+        // Just change role
+        await adminAPI.updateUserRole(selectedUser.id, newRole);
       }
       
-      try {
-        await adminAPI.deleteUser(userId);
-        setUsers(users.filter(u => u.id !== userId));
-        toast.success("User deleted successfully!");
-      } catch (error) {
-        console.error("Error deleting user:", error);
-        toast.error(error.message || "Failed to delete user");
-      }
-    };
+      // Update local state
+      setUsers(users.map(u => 
+        u.id === selectedUser.id ? { ...u, role: newRole } : u
+      ));
+      
+      setShowRoleModal(false);
+      setSelectedUser(null);
+    } catch (error) {
+      console.error("Error changing role:", error);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId) => {
+    if (!window.confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
+      return;
+    }
+    
+    try {
+      await adminAPI.deleteUser(userId);
+      setUsers(users.filter(u => u.id !== userId));
+      toast.success("User deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast.error(error.message || "Failed to delete user");
+    }
+  };
+
+  // Filter users
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole = filterRole === "all" || user.role === filterRole;
+    return matchesSearch && matchesRole;
+  });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * usersPerPage,
+    currentPage * usersPerPage
+  );
+
+  const getRoleIcon = (role) => {
+    switch (role) {
+      case 'admin': return <FaUserShield className="text-purple-500" />;
+      case 'technician': return <FaTools className="text-orange-500" />;
+      default: return <FaUser className="text-blue-500" />;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex">
+      <AdminSidebar active="Users" />
+      
+      <main className="flex-1 ml-64 p-8">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">User Management</h1>
+          <p className="text-gray-500 mt-2">View and manage all registered users</p>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 flex flex-wrap gap-4 items-center border border-gray-100">
+          <div className="flex-1 min-w-[200px] relative">
+            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by name or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <select
+            value={filterRole}
+            onChange={(e) => setFilterRole(e.target.value)}
+            className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">All Roles</option>
+            <option value="user">Users</option>
+            <option value="admin">Admins</option>
+            <option value="technician">Technicians</option>
+          </select>
+        </div>
 
         {/* Users Table */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
