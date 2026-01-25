@@ -10,7 +10,61 @@ import { useToast } from "../../Component/Toast";
 import { getUser } from "../../lib/storage";
 import AdminSidebar from "./AdminSidebar";
 
+const AdminUsers = () => {
+  const navigate = useNavigate();
+  const toast = useToast();
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterRole, setFilterRole] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 10;
 
+  // Modal states
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [newRole, setNewRole] = useState("");
+  const [technicianData, setTechnicianData] = useState({ specialization: "", experience: 0 });
+  const [updating, setUpdating] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null);
+
+  useEffect(() => {
+    checkAdminAccess();
+    fetchUsers();
+  }, []);
+
+  const checkAdminAccess = () => {
+    const user = getUser() || {};
+    if (user.role !== "admin") {
+      navigate("/login");
+    }
+    setCurrentUserId(user.id);
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const response = await adminAPI.getAllUsers();
+      if (response.data) {
+        setUsers(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBlockUser = async (userId, currentStatus) => {
+    try {
+      await adminAPI.toggleUserBlock(userId);
+      setUsers(users.map(u => 
+        u.id === userId ? { ...u, isBlocked: !currentStatus } : u
+      ));
+    } catch (error) {
+      console.error("Error toggling user block:", error);
+    }
+  };
+  
 
         {/* Users Table */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
