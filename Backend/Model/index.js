@@ -13,6 +13,7 @@ export * from './Ticket/TicketModel.js';
 export * from './Ticket/TicketReplyModel.js';
 export * from './FAQ/FAQModel.js';
 export * from './Feedback/FeedbackModel.js';
+export * from './Wishlist/WishlistModel.js';
 
 // Model Associations
 import { User } from './User/UserModel.js';
@@ -29,6 +30,7 @@ import { Technician } from './Technician/TechnicianModel.js';
 import { Feedback } from './Feedback/FeedbackModel.js';
 import { Ticket } from './Ticket/TicketModel.js';
 import { TicketReply } from './Ticket/TicketReplyModel.js';
+import { Wishlist } from './Wishlist/WishlistModel.js';
 
 // User associations
 User.hasMany(Cart, { foreignKey: 'userId' });
@@ -36,6 +38,7 @@ User.hasMany(Order, { foreignKey: 'userId' });
 User.hasMany(Address, { foreignKey: 'userId' });
 User.hasMany(Appointment, { foreignKey: 'userId' });
 User.hasMany(Feedback, { foreignKey: 'userId' });
+Feedback.belongsTo(User, { foreignKey: 'userId' });
 
 // Product associations
 Category.hasMany(Product, { foreignKey: 'category_id' });
@@ -82,3 +85,9 @@ Ticket.hasMany(TicketReply, { foreignKey: 'ticketId' });
 TicketReply.belongsTo(Ticket, { foreignKey: 'ticketId' });
 TicketReply.belongsTo(User, { foreignKey: 'userId' });
 User.hasMany(TicketReply, { foreignKey: 'userId' });
+
+// Wishlist associations
+Wishlist.belongsTo(User, { foreignKey: 'userId' });
+Wishlist.belongsTo(Product, { foreignKey: 'productId' });
+User.hasMany(Wishlist, { foreignKey: 'userId' });
+Product.hasMany(Wishlist, { foreignKey: 'productId' });
