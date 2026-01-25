@@ -64,7 +64,54 @@ const AdminUsers = () => {
       console.error("Error toggling user block:", error);
     }
   };
+   const openRoleModal = (user) => {
+      setSelectedUser(user);
+      setNewRole(user.role);
+      setTechnicianData({ specialization: "", experience: 0 });
+      setShowRoleModal(true);
+    };
   
+    const handleRoleChange = async () => {
+      if (!selectedUser || !newRole) return;
+      
+      setUpdating(true);
+      try {
+        if (newRole === 'technician' && selectedUser.role !== 'technician') {
+          // Promote to technician with specialization
+          await adminAPI.promoteToTechnician(selectedUser.id, technicianData);
+        } else {
+          // Just change role
+          await adminAPI.updateUserRole(selectedUser.id, newRole);
+        }
+        
+        // Update local state
+        setUsers(users.map(u => 
+          u.id === selectedUser.id ? { ...u, role: newRole } : u
+        ));
+        
+        setShowRoleModal(false);
+        setSelectedUser(null);
+      } catch (error) {
+        console.error("Error changing role:", error);
+      } finally {
+        setUpdating(false);
+      }
+    };
+  
+    const handleDeleteUser = async (userId) => {
+      if (!window.confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
+        return;
+      }
+      
+      try {
+        await adminAPI.deleteUser(userId);
+        setUsers(users.filter(u => u.id !== userId));
+        toast.success("User deleted successfully!");
+      } catch (error) {
+        console.error("Error deleting user:", error);
+        toast.error(error.message || "Failed to delete user");
+      }
+    };
 
         {/* Users Table */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
