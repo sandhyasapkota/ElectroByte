@@ -4,14 +4,17 @@ import {
   FaTools, FaClipboardList, FaClock, FaCheckCircle, 
   FaSpinner, FaUser, FaPhone, FaEnvelope, FaCalendar,
   FaLaptop, FaMobile, FaDesktop, FaSave, FaTimes,
-  FaHome, FaSignOutAlt
+  FaSignOutAlt
 } from "react-icons/fa";
 import { appointmentAPI } from "../../services/api";
 import { useToast } from "../../Component/Toast";
+import { useAuth } from "../../contexts/AuthContext";
+import { getUser } from "../../lib/storage";
 
 const TechnicianDashboard = () => {
   const navigate = useNavigate();
   const toast = useToast();
+  const { logout } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState("all");
@@ -32,12 +35,12 @@ const TechnicianDashboard = () => {
   }, []);
 
   const checkTechnicianAccess = () => {
-    const user = JSON.parse(sessionStorage.getItem("user") || "{}");
+    const user = getUser() || {};
     if (user.role !== "technician" && user.role !== "admin") {
       navigate("/login");
     }
   };
-
+  
   const fetchJobs = async () => {
     try {
       const response = await appointmentAPI.getTechnicianJobs();
@@ -130,9 +133,7 @@ const TechnicianDashboard = () => {
   };
 
   const handleLogout = () => {
-    sessionStorage.removeItem("access_token");
-    sessionStorage.removeItem("user");
-    window.dispatchEvent(new Event("userLogout"));
+    logout();
     navigate("/login");
   };
 
@@ -143,7 +144,7 @@ const TechnicianDashboard = () => {
       </div>
     );
   }
-
+  
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
@@ -159,13 +160,6 @@ const TechnicianDashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <Link 
-              to="/home" 
-              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-            >
-              <FaHome />
-              <span className="hidden sm:inline">Home</span>
-            </Link>
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-all font-medium"

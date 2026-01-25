@@ -53,7 +53,7 @@ const AdminAppointments = () => {
       setRefreshing(false);
     }
   };
-
+  
   const handleAssignTechnician = async (appointmentId, technicianId) => {
     try {
       // Find the repair ID for this appointment

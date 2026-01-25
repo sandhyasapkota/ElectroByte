@@ -11,3 +11,4 @@ export * from './Ticket/TicketController.js';
 export * from './FAQ/FAQController.js';
 export * from './Feedback/FeedbackController.js';
 export * from './Admin/AdminController.js';
+export * from './Wishlist/WishlistController.js';
