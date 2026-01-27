@@ -1,64 +1,82 @@
 import { z } from 'zod';
 
-// Repair appointment schema
+const appointmentTimeSlots = [
+  '09:00 AM',
+  '10:00 AM',
+  '11:00 AM',
+  '12:00 PM',
+  '02:00 PM',
+  '03:00 PM',
+  '04:00 PM',
+  '05:00 PM',
+];
+
+const deviceTypes = [
+  'Laptop',
+  'Desktop',
+  'Mobile Phone',
+  'Tablet',
+  'Monitor',
+  'Printer',
+  'Other',
+];
+
+// Repair appointment schema (BookRepair form)
 export const appointmentSchema = z.object({
-  deviceType: z
-    .enum(['laptop', 'desktop', 'mobile', 'tablet', 'other'], {
-      required_error: 'Device type is required',
-    }),
-  deviceBrand: z
+  appointmentDate: z
     .string()
-    .min(1, 'Device brand is required')
-    .max(100, 'Brand must be less than 100 characters'),
-  deviceModel: z
-    .string()
-    .min(1, 'Device model is required')
-    .max(100, 'Model must be less than 100 characters'),
-  issueDescription: z
-    .string()
-    .min(1, 'Issue description is required')
-    .min(20, 'Please provide more details about the issue (at least 20 characters)')
-    .max(2000, 'Description must be less than 2000 characters'),
-  preferredDate: z
-    .string()
-    .min(1, 'Preferred date is required')
+    .min(1, 'Appointment date is required')
     .refine((date) => {
       const selectedDate = new Date(date);
+      if (Number.isNaN(selectedDate.getTime())) return false;
       const today = new Date();
       today.setHours(0, 0, 0, 0);
+      selectedDate.setHours(0, 0, 0, 0);
       return selectedDate >= today;
     }, {
       message: 'Date cannot be in the past',
     }),
-  preferredTime: z
-    .enum(['09:00-12:00', '12:00-15:00', '15:00-18:00'], {
-      required_error: 'Preferred time slot is required',
+  appointmentTime: z
+    .string()
+    .min(1, 'Appointment time is required')
+    .refine((time) => appointmentTimeSlots.includes(time), {
+      message: 'Invalid time slot',
     }),
-  // Contact info
-  contactName: z
+  deviceType: z
     .string()
-    .min(1, 'Contact name is required')
-    .min(2, 'Name must be at least 2 characters')
-    .max(100, 'Name must be less than 100 characters'),
-  contactPhone: z
+    .min(1, 'Device type is required')
+    .refine((type) => deviceTypes.includes(type), {
+      message: 'Invalid device type',
+    }),
+  deviceBrand: z
     .string()
-    .min(1, 'Phone number is required')
-    .regex(/^[0-9]{10,15}$/, 'Phone number must be 10-15 digits'),
-  contactEmail: z
+    .max(100, 'Brand must be less than 100 characters')
+    .optional()
+    .or(z.literal('')),
+  issueDescription: z
     .string()
-    .min(1, 'Email is required')
-    .email('Invalid email format'),
-  // Address
-  address: z
+    .min(1, 'Issue description is required')
+    .min(10, 'Please provide more details (at least 10 characters)')
+    .max(2000, 'Description must be less than 2000 characters'),
+  pickupRequired: z
+    .boolean()
+    .default(false),
+  pickupAddress: z
     .string()
-    .min(1, 'Address is required')
-    .min(10, 'Address must be at least 10 characters')
-    .max(500, 'Address must be less than 500 characters'),
-  // Additional notes
-  notes: z
-    .string()
-    .max(1000, 'Notes must be less than 1000 characters')
-    .optional(),
+    .max(500, 'Pickup address must be less than 500 characters')
+    .optional()
+    .or(z.literal('')),
+}).superRefine((data, ctx) => {
+  if (data.pickupRequired) {
+    const address = data.pickupAddress || '';
+    if (address.trim().length < 10) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Pickup address is required (min 10 characters)',
+        path: ['pickupAddress'],
+      });
+    }
+  }
 });
 
 // Track repair schema
