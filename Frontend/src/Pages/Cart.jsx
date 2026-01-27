@@ -3,8 +3,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { FaTrash, FaMinus, FaPlus, FaShoppingBag, FaArrowLeft, FaHome } from "react-icons/fa";
 import { cartAPI } from "../services/api";
 import { useToast } from "../Component/Toast";
+import { getToken } from "../lib/storage";
+import { API_ORIGIN } from "../lib/config";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = API_ORIGIN;
 
 // Helper to get image URL
 const getImageUrl = (url) => {
@@ -32,7 +34,7 @@ const Cart = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const token = sessionStorage.getItem('access_token');
+    const token = getToken();
     if (!token) {
       navigate('/login');
       return;

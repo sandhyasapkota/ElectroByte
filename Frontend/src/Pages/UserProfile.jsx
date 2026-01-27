@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
   FaUser,
   FaShoppingBag,
@@ -24,10 +24,21 @@ import {
   FaBox,
   FaTruck,
   FaClipboardList,
+  FaSpinner,
+  FaTrash,
+  FaArrowLeft,
+  FaHome,
 } from "react-icons/fa";
+import { feedbackAPI, userAPI, wishlistAPI, cartAPI, orderAPI } from "../services/api";
+import { useToast } from "../Component/Toast";
+import { useAuth } from "../contexts/AuthContext";
+import { getToken, clearAuth } from "../lib/storage";
+import { API_BASE_URL, API_ORIGIN } from "../lib/config";
 
 const UserProfile = () => {
   const navigate = useNavigate();
+  const toast = useToast();
+  const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -61,6 +72,21 @@ const UserProfile = () => {
   // Image upload states
   const [imagePreview, setImagePreview] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Reviews states
+  const [myReviews, setMyReviews] = useState([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [deletingReview, setDeletingReview] = useState(null);
+
+  // Wishlist states
+  const [wishlist, setWishlist] = useState([]);
+  const [loadingWishlist, setLoadingWishlist] = useState(false);
+  const [removingFromWishlist, setRemovingFromWishlist] = useState(null);
+  const [addingToCartFromWishlist, setAddingToCartFromWishlist] = useState(null);
+
+  // Orders states
+  const [orders, setOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
 
   const sidebarItems = [
     { id: "overview", name: "Overview", icon: FaUser },
@@ -107,8 +133,21 @@ const UserProfile = () => {
     fetchUserData();
   }, []);
 
+  // Fetch reviews, wishlist, and orders when tab changes
+  useEffect(() => {
+    if (activeTab === "reviews") {
+      fetchMyReviews();
+    }
+    if (activeTab === "wishlist") {
+      fetchWishlist();
+    }
+    if (activeTab === "orders") {
+      fetchMyOrders();
+    }
+  }, [activeTab]);
+
   const fetchUserData = async () => {
-    const token = localStorage.getItem("access_token");
+    const token = getToken();
 
     if (!token) {
       navigate("/login");
@@ -116,7 +155,7 @@ const UserProfile = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/init", {
+      const response = await fetch(`${API_BASE_URL}/init`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -139,7 +178,8 @@ const UserProfile = () => {
       } else {
         // Only redirect to login if token is actually invalid
         if (response.status === 401 || response.status === 403) {
-          localStorage.removeItem("access_token");
+          clearAuth();
+          window.dispatchEvent(new Event("userLogout"));
           navigate("/login");
         } else {
           console.error("API Error:", data.error || data.message);
@@ -156,8 +196,107 @@ const UserProfile = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("access_token");
+    logout();
     navigate("/login");
+  };
+
+  // Fetch user's orders
+  const fetchMyOrders = async () => {
+    setLoadingOrders(true);
+    try {
+      const response = await orderAPI.getMyOrders();
+      if (response.data) {
+        setOrders(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  const getOrderStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'delivered': return 'bg-green-100 text-green-700';
+      case 'shipped': return 'bg-blue-100 text-blue-700';
+      case 'processing': return 'bg-yellow-100 text-yellow-700';
+      case 'pending': return 'bg-orange-100 text-orange-700';
+      case 'cancelled': return 'bg-red-100 text-red-700';
+      default: return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  // Fetch user's reviews
+  const fetchMyReviews = async () => {
+    setLoadingReviews(true);
+    try {
+      const response = await feedbackAPI.getMyReviews();
+      if (response.data) {
+        setMyReviews(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+    } finally {
+      setLoadingReviews(false);
+    }
+  };
+
+  // Delete a review
+  const handleDeleteReview = async (reviewId) => {
+    if (!window.confirm("Are you sure you want to delete this review?")) return;
+    
+    setDeletingReview(reviewId);
+    try {
+      await feedbackAPI.deleteReview(reviewId);
+      setMyReviews(myReviews.filter(r => r.id !== reviewId));
+      toast.success("Review deleted successfully!");
+    } catch (error) {
+      toast.error(error.message || "Failed to delete review");
+    } finally {
+      setDeletingReview(null);
+    }
+  };
+
+  // Fetch wishlist
+  const fetchWishlist = async () => {
+    setLoadingWishlist(true);
+    try {
+      const response = await wishlistAPI.get();
+      if (response.data) {
+        setWishlist(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching wishlist:", error);
+    } finally {
+      setLoadingWishlist(false);
+    }
+  };
+
+  // Remove from wishlist
+  const handleRemoveFromWishlist = async (productId) => {
+    setRemovingFromWishlist(productId);
+    try {
+      await wishlistAPI.remove(productId);
+      setWishlist(wishlist.filter(item => item.productId !== productId));
+      toast.success("Removed from wishlist!");
+    } catch (error) {
+      toast.error(error.message || "Failed to remove from wishlist");
+    } finally {
+      setRemovingFromWishlist(null);
+    }
+  };
+
+  // Add to cart from wishlist
+  const handleAddToCartFromWishlist = async (productId) => {
+    setAddingToCartFromWishlist(productId);
+    try {
+      await cartAPI.add(productId, 1);
+      toast.success("Added to cart!");
+    } catch (error) {
+      toast.error(error.message || "Failed to add to cart");
+    } finally {
+      setAddingToCartFromWishlist(null);
+    }
   };
 
   // Edit Profile Handlers
@@ -193,10 +332,10 @@ const UserProfile = () => {
     }
 
     setSubmitLoading(true);
-    const token = localStorage.getItem("access_token");
+    const token = getToken();
 
     try {
-      const response = await fetch(`http://localhost:5000/api/users/me`, {
+      const response = await fetch(`${API_BASE_URL}/users/me`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -282,10 +421,10 @@ const UserProfile = () => {
     }
 
     setSubmitLoading(true);
-    const token = localStorage.getItem("access_token");
+    const token = getToken();
 
     try {
-      const response = await fetch(`http://localhost:5000/api/users/me`, {
+      const response = await fetch(`${API_BASE_URL}/users/me`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -328,59 +467,44 @@ const UserProfile = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      alert("Image size should be less than 10MB");
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size should be less than 5MB");
       return;
     }
 
     if (!file.type.startsWith("image/")) {
-      alert("Please select an image file");
+      toast.error("Please select an image file");
       return;
     }
 
     setUploadingImage(true);
 
+    // Show preview immediately
     const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64String = reader.result;
-      setImagePreview(base64String);
-
-      const token = localStorage.getItem("access_token");
-
-      try {
-        const response = await fetch(
-          `http://localhost:5000/api/users/${userData.id}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              profileImage: base64String,
-            }),
-          }
-        );
-
-        const data = await response.json();
-
-        if (response.ok) {
-          setUserData({ ...userData, profileImage: base64String });
-          window.dispatchEvent(new Event("profileUpdated"));
-        } else {
-          alert(data.error || "Failed to upload image");
-          setImagePreview(null);
-        }
-      } catch (error) {
-        console.error("Error uploading image:", error);
-        alert("Failed to upload image");
-        setImagePreview(null);
-      } finally {
-        setUploadingImage(false);
-      }
+    reader.onload = (e) => {
+      setImagePreview(e.target.result);
     };
-
     reader.readAsDataURL(file);
+
+    try {
+      // Use FormData for file upload
+      const formData = new FormData();
+      formData.append("profileImage", file);
+
+      const response = await userAPI.uploadProfileImage(formData);
+      
+      if (response.data?.profileImage) {
+        setUserData({ ...userData, profileImage: response.data.profileImage });
+        window.dispatchEvent(new Event("profileUpdated"));
+        toast.success("Profile image updated!");
+      }
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast.error(error.message || "Failed to upload image");
+      setImagePreview(null);
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   // Loading State
@@ -432,6 +556,16 @@ const UserProfile = () => {
       .slice(0, 2);
   };
 
+  // Helper to get profile image URL (handles both file URLs and base64)
+  const getProfileImageUrl = (imageUrl) => {
+    if (!imageUrl) return null;
+    // If it's a base64 string or external URL, return as is
+    if (imageUrl.startsWith('data:') || imageUrl.startsWith('http')) {
+      return imageUrl;
+    }
+    // If it's a relative path, prepend the API base
+    return `${API_ORIGIN}${imageUrl}`;
+  };
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
       {/* Profile Header */}
@@ -451,13 +585,22 @@ const UserProfile = () => {
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          {/* Back Button */}
+          <button 
+            onClick={() => navigate(-1)} 
+            className="flex items-center gap-2 text-white/80 hover:text-white mb-6 transition-colors group"
+          >
+            <FaArrowLeft className="group-hover:-translate-x-1 transition-transform" />
+            <span>Back</span>
+          </button>
+          
           <div className="flex flex-col lg:flex-row items-center lg:items-end gap-8">
             {/* Profile Picture */}
             <div className="relative group">
               <div className="w-32 h-32 lg:w-40 lg:h-40 rounded-full bg-white p-1.5 shadow-2xl">
                 {userData?.profileImage || imagePreview ? (
                   <img
-                    src={imagePreview || userData.profileImage}
+                    src={imagePreview || getProfileImageUrl(userData.profileImage)}
                     alt="Profile"
                     className="w-full h-full rounded-full object-cover"
                   />
@@ -510,12 +653,18 @@ const UserProfile = () => {
               </div>
               <div className="mt-4 flex flex-wrap items-center justify-center lg:justify-start gap-3">
                 <span className="px-4 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium">
-                  {userData?.role === "admin" ? "Administrator" : "Member"}
+                  {userData?.role === "admin" ? "Administrator" : userData?.role === "technician" ? "Technician" : "Member"}
                 </span>
-                <span className="px-4 py-1.5 bg-green-400/20 backdrop-blur-sm rounded-full text-sm font-medium text-green-100">
-                  <FaCheck className="inline mr-1.5" />
-                  Verified Account
-                </span>
+                {userData?.isEmailVerified ? (
+                  <span className="px-4 py-1.5 bg-green-400/20 backdrop-blur-sm rounded-full text-sm font-medium text-green-100">
+                    <FaCheck className="inline mr-1.5" />
+                    Email Verified
+                  </span>
+                ) : (
+                  <span className="px-4 py-1.5 bg-yellow-400/20 backdrop-blur-sm rounded-full text-sm font-medium text-yellow-100">
+                    Email Not Verified
+                  </span>
+                )}
               </div>
             </div>
 
@@ -536,6 +685,19 @@ const UserProfile = () => {
                 Logout
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Breadcrumb */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex items-center gap-2 text-sm">
+            <Link to="/" className="text-gray-500 hover:text-blue-600 flex items-center gap-1">
+              <FaHome className="text-xs" /> Home
+            </Link>
+            <span className="text-gray-400">/</span>
+            <span className="text-gray-800 font-medium">My Profile</span>
           </div>
         </div>
       </div>
@@ -754,22 +916,103 @@ const UserProfile = () => {
             {/* Orders Tab */}
             {activeTab === "orders" && (
               <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-3 mb-6">
-                  <span className="w-1 h-6 bg-gradient-to-b from-blue-600 to-purple-600 rounded-full"></span>
-                  My Orders
-                </h2>
-                <div className="text-center py-12">
-                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <FaClipboardList className="text-3xl text-gray-400" />
-                  </div>
-                  <p className="text-gray-500 mb-4">No orders yet</p>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-bold text-gray-900 flex items-center gap-3">
+                    <span className="w-1 h-6 bg-gradient-to-b from-blue-600 to-purple-600 rounded-full"></span>
+                    My Orders
+                    {orders.length > 0 && (
+                      <span className="text-sm font-normal text-gray-500">({orders.length} orders)</span>
+                    )}
+                  </h2>
                   <button
-                    onClick={() => navigate("/products")}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all"
+                    onClick={() => navigate("/orders")}
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1"
                   >
-                    Start Shopping
+                    View All <FaChevronRight className="text-xs" />
                   </button>
                 </div>
+                
+                {loadingOrders ? (
+                  <div className="flex justify-center py-12">
+                    <FaSpinner className="animate-spin text-3xl text-blue-600" />
+                  </div>
+                ) : orders.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <FaClipboardList className="text-3xl text-gray-400" />
+                    </div>
+                    <p className="text-gray-500 mb-4">No orders yet</p>
+                    <button
+                      onClick={() => navigate("/products")}
+                      className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all"
+                    >
+                      Start Shopping
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {orders.slice(0, 5).map((order) => (
+                      <div 
+                        key={order.id} 
+                        className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all cursor-pointer"
+                        onClick={() => navigate("/orders")}
+                      >
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <p className="font-semibold text-gray-800">Order #{order.orderId || order.id}</p>
+                            <p className="text-sm text-gray-500">
+                              {new Date(order.createdAt).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })}
+                            </p>
+                          </div>
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${getOrderStatusColor(order.status)}`}>
+                            {order.status}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">
+                            {order.OrderItems?.length || 0} item(s)
+                          </span>
+                          <p className="font-semibold text-blue-600">
+                            NPR {parseFloat(order.totalAmount || 0).toLocaleString()}
+                          </p>
+                        </div>
+                        {order.OrderItems && order.OrderItems.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-gray-100">
+                            <div className="space-y-2">
+                              {order.OrderItems.slice(0, 3).map((item, idx) => (
+                                <div key={idx} className="flex justify-between items-center text-sm">
+                                  <span className="text-gray-600 truncate flex-1">
+                                    {item.productName || item.Product?.name} x {item.quantity}
+                                  </span>
+                                  <span className="text-gray-800 font-medium ml-2">
+                                    NPR {parseFloat(item.price || 0).toLocaleString()}
+                                  </span>
+                                </div>
+                              ))}
+                              {order.OrderItems.length > 3 && (
+                                <p className="text-xs text-gray-400">
+                                  +{order.OrderItems.length - 3} more items
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {orders.length > 5 && (
+                      <button
+                        onClick={() => navigate("/orders")}
+                        className="w-full py-3 text-blue-600 hover:bg-blue-50 rounded-xl font-medium transition-colors"
+                      >
+                        View All {orders.length} Orders
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -777,21 +1020,102 @@ const UserProfile = () => {
             {activeTab === "wishlist" && (
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <h2 className="text-xl font-bold text-gray-900 flex items-center gap-3 mb-6">
-                  <span className="w-1 h-6 bg-gradient-to-b from-blue-600 to-purple-600 rounded-full"></span>
+                  <span className="w-1 h-6 bg-gradient-to-b from-red-500 to-pink-500 rounded-full"></span>
                   My Wishlist
+                  {wishlist.length > 0 && (
+                    <span className="text-sm font-normal text-gray-500">({wishlist.length} items)</span>
+                  )}
                 </h2>
-                <div className="text-center py-12">
-                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <FaHeart className="text-3xl text-gray-400" />
+                
+                {loadingWishlist ? (
+                  <div className="flex justify-center py-12">
+                    <FaSpinner className="animate-spin text-3xl text-blue-600" />
                   </div>
-                  <p className="text-gray-500 mb-4">Your wishlist is empty</p>
-                  <button
-                    onClick={() => navigate("/products")}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all"
-                  >
-                    Explore Products
-                  </button>
-                </div>
+                ) : wishlist.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <FaHeart className="text-3xl text-red-300" />
+                    </div>
+                    <p className="text-gray-500 mb-4">Your wishlist is empty</p>
+                    <button
+                      onClick={() => navigate("/products")}
+                      className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all"
+                    >
+                      Explore Products
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {wishlist.map((item) => {
+                      const product = item.Product;
+                      const primaryImage = product?.images?.find(img => img.isPrimary) || product?.images?.[0];
+                      const imageUrl = primaryImage?.imageUrl 
+                        ? (primaryImage.imageUrl.startsWith('http') ? primaryImage.imageUrl : `${API_ORIGIN}${primaryImage.imageUrl}`)
+                        : 'https://via.placeholder.com/200';
+                      
+                      return (
+                        <div key={item.id} className="border border-gray-200 rounded-xl p-4 hover:shadow-lg transition-all group">
+                          <div className="relative">
+                            <img
+                              src={imageUrl}
+                              alt={product?.name}
+                              className="w-full h-40 object-cover rounded-lg mb-3 cursor-pointer"
+                              onClick={() => navigate(`/product/${product?.id}`)}
+                            />
+                            <button
+                              onClick={() => handleRemoveFromWishlist(item.productId)}
+                              disabled={removingFromWishlist === item.productId}
+                              className="absolute top-2 right-2 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
+                            >
+                              {removingFromWishlist === item.productId ? (
+                                <FaSpinner className="animate-spin text-sm" />
+                              ) : (
+                                <FaHeart className="text-sm" />
+                              )}
+                            </button>
+                          </div>
+                          
+                          <h3 
+                            className="font-semibold text-gray-900 mb-1 cursor-pointer hover:text-blue-600 line-clamp-2"
+                            onClick={() => navigate(`/product/${product?.id}`)}
+                          >
+                            {product?.name}
+                          </h3>
+                          
+                          <p className="text-sm text-gray-500 mb-2">
+                            {product?.Brand?.name || 'Unknown Brand'}
+                          </p>
+                          
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-lg font-bold text-blue-600">
+                              NPR {product?.price?.toLocaleString()}
+                            </span>
+                            {product?.stock_quantity > 0 ? (
+                              <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">In Stock</span>
+                            ) : (
+                              <span className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded-full">Out of Stock</span>
+                            )}
+                          </div>
+                          
+                          <button
+                            onClick={() => handleAddToCartFromWishlist(product?.id)}
+                            disabled={addingToCartFromWishlist === product?.id || !product?.stock_quantity}
+                            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 rounded-lg font-medium hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                          >
+                            {addingToCartFromWishlist === product?.id ? (
+                              <FaSpinner className="animate-spin" />
+                            ) : (
+                              <>
+                                <FaShoppingBag className="text-sm" />
+                                Add to Cart
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
@@ -854,22 +1178,111 @@ const UserProfile = () => {
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <h2 className="text-xl font-bold text-gray-900 flex items-center gap-3 mb-6">
                   <span className="w-1 h-6 bg-gradient-to-b from-blue-600 to-purple-600 rounded-full"></span>
-                  My Reviews
+                  My Reviews ({myReviews.length})
                 </h2>
-                <div className="text-center py-12">
-                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <FaStar className="text-3xl text-gray-400" />
+                
+                {loadingReviews ? (
+                  <div className="text-center py-12">
+                    <FaSpinner className="animate-spin text-3xl text-blue-600 mx-auto mb-4" />
+                    <p className="text-gray-500">Loading your reviews...</p>
                   </div>
-                  <p className="text-gray-500 mb-4">
-                    You haven't written any reviews yet
-                  </p>
-                  <button
-                    onClick={() => navigate("/orders")}
-                    className="text-blue-600 font-medium hover:underline"
-                  >
-                    Review past purchases
-                  </button>
-                </div>
+                ) : myReviews.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <FaStar className="text-3xl text-gray-400" />
+                    </div>
+                    <p className="text-gray-500 mb-4">
+                      You haven't written any reviews yet
+                    </p>
+                    <button
+                      onClick={() => navigate("/products")}
+                      className="text-blue-600 font-medium hover:underline"
+                    >
+                      Browse products to review
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {myReviews.map((review) => (
+                      <div key={review.id} className="border border-gray-200 rounded-xl p-5 hover:shadow-md transition">
+                        <div className="flex items-start gap-4">
+                          {/* Product Image */}
+                          <div 
+                            className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer"
+                            onClick={() => review.product && navigate(`/product/${review.product.id}`)}
+                          >
+                            {review.product?.image_url ? (
+                              <img 
+                                src={review.product.image_url.startsWith('http') ? review.product.image_url : `${API_ORIGIN}${review.product.image_url}`}
+                                alt={review.product?.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <FaBox className="text-gray-400 text-xl" />
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Review Content */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-4">
+                              <div>
+                                <h3 
+                                  className="font-semibold text-gray-900 hover:text-blue-600 cursor-pointer truncate"
+                                  onClick={() => review.product && navigate(`/product/${review.product.id}`)}
+                                >
+                                  {review.product?.name || `${review.type} Review`}
+                                </h3>
+                                <div className="flex items-center gap-1 mt-1">
+                                  {[...Array(5)].map((_, i) => (
+                                    <FaStar 
+                                      key={i} 
+                                      className={`text-sm ${
+                                        i < review.rating ? "text-yellow-400" : "text-gray-300"
+                                      }`} 
+                                    />
+                                  ))}
+                                  <span className="text-sm text-gray-500 ml-2">
+                                    {review.rating}/5
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              {/* Delete Button */}
+                              <button
+                                onClick={() => handleDeleteReview(review.id)}
+                                disabled={deletingReview === review.id}
+                                className="text-gray-400 hover:text-red-500 transition p-2"
+                                title="Delete review"
+                              >
+                                {deletingReview === review.id ? (
+                                  <FaSpinner className="animate-spin" />
+                                ) : (
+                                  <FaTrash />
+                                )}
+                              </button>
+                            </div>
+                            
+                            {review.comment && (
+                              <p className="text-gray-600 text-sm mt-2 line-clamp-2">
+                                {review.comment}
+                              </p>
+                            )}
+                            
+                            <p className="text-xs text-gray-400 mt-2">
+                              Reviewed on {new Date(review.createdAt).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

@@ -21,8 +21,11 @@ import { SiIntel, SiNvidia } from "react-icons/si";
 import { FaMemory, FaHdd } from "react-icons/fa";
 import { productAPI, cartAPI, feedbackAPI, wishlistAPI } from "../services/api";
 import { useToast } from "../Component/Toast";
+import { getToken } from "../lib/storage";
+import { API_ORIGIN } from "../lib/config";
+import { fetchRatingsForProducts, getRatingData } from "../lib/ratings";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = API_ORIGIN;
 
 const AboutProduct = () => {
   const { id } = useParams();
@@ -52,6 +55,10 @@ const AboutProduct = () => {
   // Wishlist states
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
+  
+  // Related products
+  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [loadingRelated, setLoadingRelated] = useState(false);
 
   useEffect(() => {
     fetchProduct();
@@ -68,6 +75,7 @@ const AboutProduct = () => {
       const productData = response.data || response;
       if (productData) {
         setProduct(productData);
+        fetchRelatedProducts(productData);
       } else {
         setError("Product not found");
       }
@@ -96,7 +104,7 @@ const AboutProduct = () => {
   };
 
   const checkWishlistStatus = async () => {
-    const token = sessionStorage.getItem("access_token");
+    const token = getToken();
     if (!token) {
       setIsInWishlist(false);
       return;
@@ -112,8 +120,50 @@ const AboutProduct = () => {
     }
   };
 
+  const fetchRelatedProducts = async (productData) => {
+    if (!productData?.id) return;
+    setLoadingRelated(true);
+    try {
+      const response = await productAPI.getAll();
+      const allProducts = Array.isArray(response) ? response : response.data || [];
+      const relatedMap = new Map();
+
+      allProducts.forEach((item) => {
+        if (!item || item.id === productData.id) return;
+        const matchesCategory = productData.category_id && item.category_id === productData.category_id;
+        const matchesBrand = productData.brand_id && item.brand_id === productData.brand_id;
+        if (matchesCategory || matchesBrand) {
+          relatedMap.set(item.id, item);
+        }
+      });
+
+      const relatedList = Array.from(relatedMap.values());
+      const fallbackList = relatedList.length > 0
+        ? relatedList
+        : allProducts.filter((item) => item && item.id !== productData.id);
+      const selected = fallbackList.slice(0, 4);
+
+      const ratingMap = await fetchRatingsForProducts(selected);
+      const relatedWithRatings = selected.map((item) => {
+        const ratingData = getRatingData(ratingMap, item.id);
+        return {
+          ...item,
+          rating: ratingData.averageRating,
+          reviewCount: ratingData.totalReviews,
+        };
+      });
+
+      setRelatedProducts(relatedWithRatings);
+    } catch (err) {
+      console.error("Error fetching related products:", err);
+      setRelatedProducts([]);
+    } finally {
+      setLoadingRelated(false);
+    }
+  };
+
   const handleToggleWishlist = async () => {
-    const token = sessionStorage.getItem("access_token");
+    const token = getToken();
     if (!token) {
       navigate("/login");
       return;
@@ -144,7 +194,7 @@ const AboutProduct = () => {
   };
 
   const handleSubmitReview = async () => {
-    const token = sessionStorage.getItem("access_token");
+    const token = getToken();
     if (!token) {
       navigate("/login");
       return;
@@ -180,6 +230,15 @@ const AboutProduct = () => {
     return `${API_BASE}${url}`;
   };
 
+  const getProductPrimaryImage = (item) => {
+    if (!item) return null;
+    if (item.images && item.images.length > 0) {
+      const primaryImage = item.images.find((img) => img.isPrimary) || item.images[0];
+      return getImageUrl(primaryImage?.imageUrl);
+    }
+    return getImageUrl(item.image_url || item.image);
+  };
+
   // Get all product images
   const getProductImages = () => {
     const images = [];
@@ -203,7 +262,7 @@ const AboutProduct = () => {
   };
 
   const handleAddToCart = async () => {
-    const token = sessionStorage.getItem("access_token");
+    const token = getToken();
     if (!token) {
       navigate("/login");
       return;
@@ -689,7 +748,7 @@ const AboutProduct = () => {
                         {/* Write Review Button */}
                         <button
                           onClick={() => {
-                            const token = sessionStorage.getItem("access_token");
+                            const token = getToken();
                             if (!token) {
                               navigate("/login");
                               return;
@@ -742,7 +801,7 @@ const AboutProduct = () => {
                           <p className="text-gray-500 mb-4">No reviews yet. Be the first to review this product!</p>
                           <button
                             onClick={() => {
-                              const token = sessionStorage.getItem("access_token");
+                              const token = getToken();
                               if (!token) {
                                 navigate("/login");
                                 return;
@@ -826,28 +885,60 @@ const AboutProduct = () => {
           {/* Related Products */}
           <div className="mt-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Related Products</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map((item) => (
-                <div key={item} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden group">
-                  <div className="relative p-4 bg-gray-50">
-                    <div className="aspect-square bg-gray-200 rounded flex items-center justify-center">
-                      <span className="text-gray-400 text-xs">Product {item}</span>
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <div className="flex items-center gap-1 mb-2">
-                      {[...Array(5)].map((_, i) => (
-                        <FaStar key={i} className="text-xs text-yellow-400" />
-                      ))}
-                    </div>
-                    <h3 className="text-sm font-medium text-gray-900 mb-2">
-                      Related Product {item}
-                    </h3>
-                    <p className="text-base font-bold text-blue-600">Rs. 95,000</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {loadingRelated ? (
+              <div className="bg-white rounded-lg shadow-sm p-6 text-center text-gray-600">
+                Loading related products...
+              </div>
+            ) : relatedProducts.length === 0 ? (
+              <div className="bg-white rounded-lg shadow-sm p-6 text-center text-gray-600">
+                No related products found.
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {relatedProducts.map((item) => {
+                  const ratingValue = Number.isFinite(Number(item.rating)) ? Number(item.rating) : 0;
+                  const reviewCount = Number.isFinite(Number(item.reviewCount)) ? Number(item.reviewCount) : 0;
+                  const imageUrl = getProductPrimaryImage(item);
+
+                  return (
+                    <Link
+                      key={item.id}
+                      to={`/product/${item.id}`}
+                      className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden group"
+                    >
+                      <div className="relative p-4 bg-gray-50">
+                        <div className="aspect-square bg-gray-100 rounded flex items-center justify-center overflow-hidden">
+                          {imageUrl ? (
+                            <img src={imageUrl} alt={item.name} className="w-full h-full object-contain" />
+                          ) : (
+                            <span className="text-gray-400 text-xs">No Image</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="p-4">
+                        <div className="flex items-center gap-1 mb-2">
+                          {[...Array(5)].map((_, i) => (
+                            <FaStar
+                              key={i}
+                              className={`text-xs ${i < Math.floor(ratingValue) ? "text-yellow-400" : "text-gray-300"}`}
+                            />
+                          ))}
+                          <span className="text-xs text-gray-500 ml-2">
+                            ({ratingValue.toFixed(1)}{reviewCount > 0 ? ` | ${reviewCount}` : ""})
+                          </span>
+                        </div>
+                        <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
+                          {item.name}
+                        </h3>
+                        <p className="text-base font-bold text-blue-600">
+                          Rs. {Number(item.price || 0).toLocaleString()}
+                        </p>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>

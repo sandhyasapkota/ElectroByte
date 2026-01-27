@@ -6,9 +6,12 @@ import {
 } from "react-icons/fa";
 import { productAPI, categoryAPI, brandAPI } from "../../services/api";
 import { useToast } from "../../Component/Toast";
+import { getUser } from "../../lib/storage";
+import Pagination, { usePagination } from "../../Component/Pagination";
 import AdminSidebar from "./AdminSidebar";
+import { API_ORIGIN } from "../../lib/config";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = API_ORIGIN;
 
 const AdminProducts = () => {
   const navigate = useNavigate();
@@ -46,15 +49,17 @@ const AdminProducts = () => {
   });
 
   useEffect(() => {
-    checkAdminAccess();
-    fetchData();
+    const isAdmin = checkAdminAccess();
+    if (isAdmin) fetchData();
   }, []);
 
   const checkAdminAccess = () => {
-    const user = JSON.parse(sessionStorage.getItem("user") || "{}");
+    const user = getUser() || {};
     if (user.role !== "admin") {
       navigate("/login");
+      return false;
     }
+    return true;
   };
 
   const fetchData = async () => {
@@ -302,6 +307,15 @@ const AdminProducts = () => {
     product.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Pagination
+  const {
+    currentPage,
+    totalPages,
+    totalItems,
+    paginatedItems: paginatedProducts,
+    goToPage
+  } = usePagination(filteredProducts, 10);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -311,25 +325,25 @@ const AdminProducts = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col md:flex-row">
       <AdminSidebar active="Products" />
-      
-      <main className="flex-1 ml-64 p-8">
-        <div className="mb-8 flex justify-between items-center">
+      {/* Main Content */}
+      <main className="flex-1 w-full ml-0 lg:ml-64 px-2 sm:px-4 md:px-8 py-4 md:py-8">
+        <div className="mb-4 md:mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-2 md:gap-0">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Product Management</h1>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Product Management</h1>
             <p className="text-gray-500 mt-2">Manage your product catalog</p>
           </div>
           <button
             onClick={() => { resetForm(); setShowModal(true); }}
-            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 flex items-center gap-2 shadow-lg hover:shadow-xl transition-all"
+            className="px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg md:rounded-xl hover:from-blue-700 hover:to-blue-800 flex items-center gap-2 shadow-md md:shadow-lg hover:shadow-xl transition-all"
           >
             <FaPlus /> Add Product
           </button>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
           <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
             <p className="text-gray-500 text-sm">Total Products</p>
             <p className="text-3xl font-bold text-gray-800 mt-1">{products.length}</p>
@@ -353,7 +367,7 @@ const AdminProducts = () => {
         </div>
 
         {/* Search */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border border-gray-100">
+        <div className="bg-white rounded-xl md:rounded-2xl shadow-md md:shadow-lg p-4 md:p-6 mb-4 md:mb-6 border border-gray-100">
           <div className="relative max-w-md">
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
@@ -367,8 +381,8 @@ const AdminProducts = () => {
         </div>
 
         {/* Products Table */}
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
-          <table className="w-full">
+        <div className="bg-white rounded-xl md:rounded-2xl shadow-md md:shadow-lg overflow-x-auto border border-gray-100">
+          <table className="min-w-[700px] w-full">
             <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
@@ -381,7 +395,7 @@ const AdminProducts = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredProducts.length === 0 ? (
+              {paginatedProducts.length === 0 ? (
                 <tr>
                   <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
                     <FaBox className="mx-auto text-4xl mb-2 text-gray-300" />
@@ -389,7 +403,7 @@ const AdminProducts = () => {
                   </td>
                 </tr>
               ) : (
-                filteredProducts.map((product) => (
+                paginatedProducts.map((product) => (
                   <tr key={product.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -461,18 +475,29 @@ const AdminProducts = () => {
           </table>
         </div>
 
+        {/* Pagination */}
+        <div className="mt-2 md:mt-4">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={goToPage}
+            totalItems={totalItems}
+            itemsPerPage={10}
+            itemName="products"
+          />
+        </div>
+
         {/* Add/Edit Modal */}
         {showModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <div className="p-6 border-b flex justify-between items-center sticky top-0 bg-white z-10">
-                <h2 className="text-xl font-bold">{editMode ? 'Edit' : 'Add'} Product</h2>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-2">
+            <div className="bg-white rounded-xl md:rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="p-4 md:p-6 border-b flex justify-between items-center sticky top-0 bg-white z-10">
+                <h2 className="text-lg md:text-xl font-bold">{editMode ? 'Edit' : 'Add'} Product</h2>
                 <button onClick={() => setShowModal(false)} className="text-gray-500 hover:text-gray-700">
                   <FaTimes size={20} />
                 </button>
               </div>
-              
-              <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-3 md:space-y-4">
                 {/* Existing Images (Edit Mode) */}
                 {editMode && existingImages.length > 0 && (
                   <div>
@@ -586,7 +611,7 @@ const AdminProducts = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Price (Rs.) *</label>
                     <input
@@ -621,7 +646,7 @@ const AdminProducts = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
                     <select
@@ -665,7 +690,7 @@ const AdminProducts = () => {
                   </select>
                 </div>
 
-                <div className="flex gap-3 pt-4">
+                <div className="flex flex-col md:flex-row gap-2 md:gap-3 pt-4">
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
@@ -696,10 +721,10 @@ const AdminProducts = () => {
 
         {/* Stock Update Modal */}
         {showStockModal && stockProduct && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl w-full max-w-md p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-800">Update Stock</h2>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-2">
+            <div className="bg-white rounded-xl md:rounded-2xl w-full max-w-md p-4 md:p-6">
+              <div className="flex justify-between items-center mb-4 md:mb-6">
+                <h2 className="text-lg md:text-xl font-bold text-gray-800">Update Stock</h2>
                 <button 
                   onClick={() => setShowStockModal(false)} 
                   className="text-gray-500 hover:text-gray-700"
@@ -707,9 +732,8 @@ const AdminProducts = () => {
                   <FaTimes size={20} />
                 </button>
               </div>
-
               {/* Product Info */}
-              <div className="flex items-center gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+              <div className="flex flex-col sm:flex-row items-center gap-2 md:gap-4 mb-4 md:mb-6 p-2 md:p-4 bg-gray-50 rounded-lg">
                 <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
                   {stockProduct.image_url ? (
                     <img 

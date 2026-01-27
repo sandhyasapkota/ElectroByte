@@ -6,6 +6,7 @@ import { useToast } from "../../Component/Toast";
 import { getUser } from "../../lib/storage";
 import Pagination, { usePagination } from "../../Component/Pagination";
 import AdminSidebar from "./AdminSidebar";
+import logo from "../../assets/Images/logo.png";
 
 const AdminAppointments = () => {
   const navigate = useNavigate();
@@ -21,7 +22,9 @@ const AdminAppointments = () => {
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    checkAdminAccess();
+    const isAdmin = checkAdminAccess();
+    if (!isAdmin) return;
+
     fetchData();
     
     // Auto-refresh every 30 seconds to get technician updates
@@ -33,7 +36,9 @@ const AdminAppointments = () => {
     const user = getUser() || {};
     if (user.role !== "admin") {
       navigate("/login");
+      return false;
     }
+    return true;
   };
 
   const fetchData = async (showRefreshState = false) => {
@@ -53,7 +58,7 @@ const AdminAppointments = () => {
       setRefreshing(false);
     }
   };
-  
+
   const handleAssignTechnician = async (appointmentId, technicianId) => {
     try {
       // Find the repair ID for this appointment
@@ -159,17 +164,22 @@ const AdminAppointments = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex">
       <AdminSidebar active="Appointments" />
       
-      <main className="flex-1 ml-64 p-8">
-        <div className="mb-8 flex justify-between items-start">
-          <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Appointment Management</h1>
-            <p className="text-gray-500 mt-2">View and manage repair appointments</p>
+      <main className="flex-1 ml-0 lg:ml-64 px-2 sm:px-4 md:px-8 py-4 md:py-8">
+        <div className="mb-4 md:mb-8 flex flex-col gap-4 md:flex-row md:justify-between md:items-start">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-white border border-gray-100 flex items-center justify-center shadow-sm">
+              <img src={logo} alt="ElectroByte logo" className="w-8 h-8 rounded-lg object-cover" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Appointment Management</h1>
+              <p className="text-gray-500 mt-2">View and manage repair appointments</p>
+            </div>
           </div>
           <div className="text-right">
             <button
               onClick={() => fetchData(true)}
               disabled={refreshing}
-              className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 ${refreshing ? 'opacity-50' : ''}`}
+              className={`w-full md:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2 ${refreshing ? 'opacity-50' : ''}`}
             >
               <FaSync className={refreshing ? 'animate-spin' : ''} /> Refresh
             </button>
@@ -222,7 +232,7 @@ const AdminAppointments = () => {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 flex flex-wrap gap-4 items-center border border-gray-100">
+        <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6 mb-4 md:mb-6 flex flex-wrap gap-3 md:gap-4 items-center border border-gray-100">
           <div className="flex-1 min-w-[200px] relative">
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
@@ -258,7 +268,8 @@ const AdminAppointments = () => {
 
         {/* Appointments Table */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
-          <table className="w-full">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[900px]">
             <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
@@ -324,7 +335,8 @@ const AdminAppointments = () => {
                 ))
               )}
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
 
         {/* Pagination */}
