@@ -4,8 +4,7 @@ import { FaSearch, FaUser, FaShoppingCart, FaBars, FaTimes, FaLaptop, FaSpinner,
 import { productAPI } from "../services/api";
 import { getToken, getUser, clearAuth } from "../lib/storage";
 import logo from "../assets/Images/logo.png";
-
-const API_BASE = "http://localhost:5000";
+import { API_BASE_URL, API_ORIGIN } from "../lib/config";
 
 // Helper to get profile image URL (handles both file URLs and base64)
 const getProfileImageUrl = (imageUrl) => {
@@ -15,7 +14,7 @@ const getProfileImageUrl = (imageUrl) => {
     return imageUrl;
   }
   // If it's a relative path, prepend the API base
-  return `${API_BASE}${imageUrl}`;
+  return `${API_ORIGIN}${imageUrl}`;
 };
 
 const Navbar = () => {
@@ -84,7 +83,7 @@ const Navbar = () => {
     setIsLoggedIn(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/init", {
+      const response = await fetch(`${API_BASE_URL}/init`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -116,7 +115,7 @@ const Navbar = () => {
 
   const fetchCartCount = async (token) => {
     try {
-      const response = await fetch("http://localhost:5000/api/cart", {
+      const response = await fetch(`${API_BASE_URL}/cart`, {
         headers: { "Authorization": `Bearer ${token}` },
       });
       const data = await response.json();
@@ -169,7 +168,7 @@ const Navbar = () => {
   const getImageUrl = (url) => {
     if (!url) return null;
     if (url.startsWith("http")) return url;
-    return `http://localhost:5000${url}`;
+    return `${API_ORIGIN}${url}`;
   };
 
   return (
@@ -214,7 +213,7 @@ const Navbar = () => {
         </nav>
 
         {/* Right Icons */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3">
           {/* Admin Dashboard Button - Only for admins */}
           {isLoggedIn && userData?.role === 'admin' && (
             <button
@@ -226,26 +225,28 @@ const Navbar = () => {
             </button>
           )}
           
-          {/* Search */}
-          <button 
-            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-            onClick={() => setShowSearch(true)}
-          >
-            <FaSearch className="text-gray-600 hover:text-blue-600 transition" />
-          </button>
-          
-          {/* Cart with count badge */}
-          <button 
-            className="relative w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors" 
-            onClick={() => navigate("/cart")}
-          >
-            <FaShoppingCart className="text-gray-600 hover:text-blue-600 transition" />
-            {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-md">
-                {cartCount}
-              </span>
-            )}
-          </button>
+          <div className="flex items-center gap-1">
+            {/* Search */}
+            <button 
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+              onClick={() => setShowSearch(true)}
+            >
+              <FaSearch className="text-gray-600 hover:text-blue-600 transition" />
+            </button>
+            
+            {/* Cart with count badge */}
+            <button 
+              className="relative w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors" 
+              onClick={() => navigate("/cart")}
+            >
+              <FaShoppingCart className="text-gray-600 hover:text-blue-600 transition" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-md">
+                  {cartCount}
+                </span>
+              )}
+            </button>
+          </div>
           
           {/* User Profile Picture or Icon */}
           {isLoggedIn ? (
