@@ -1,6 +1,5 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../../Database/db.js";
-import { User } from "./userModel.js";
 
 const Appointment = sequelize.define("Appointment", {
   id: {
@@ -8,33 +7,45 @@ const Appointment = sequelize.define("Appointment", {
     primaryKey: true,
     autoIncrement: true,
   },
-
-  service: {
-    type: DataTypes.STRING,
+  userId: {
+    type: DataTypes.INTEGER,
     allowNull: false,
   },
-
   appointmentDate: {
     type: DataTypes.DATEONLY,
     allowNull: false,
   },
-
   appointmentTime: {
     type: DataTypes.STRING,
     allowNull: false,
   },
-
-  status: {
+  deviceType: {
+    type: DataTypes.STRING, // Laptop, Desktop, Mobile, etc.
+    allowNull: false,
+  },
+  deviceBrand: {
     type: DataTypes.STRING,
-    defaultValue: "Pending",
+    allowNull: true,
+  },
+  issueDescription: {
+    type: DataTypes.TEXT,
+    allowNull: false,
+  },
+  status: {
+    type: DataTypes.ENUM('pending', 'confirmed', 'completed', 'cancelled'),
+    defaultValue: 'pending',
+  },
+  pickupRequired: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+  pickupAddress: {
+    type: DataTypes.TEXT,
+    allowNull: true,
   },
 }, {
   tableName: "appointments",
   timestamps: true,
 });
-
-/* 🔗 Relationships */
-User.hasMany(Appointment, { foreignKey: "userId" });
-Appointment.belongsTo(User, { foreignKey: "userId" });
 
 export { Appointment };
