@@ -1,7 +1,8 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+import { getToken as getStorageToken } from '../lib/storage';
+import { API_BASE_URL } from '../lib/config';
 
-// Get token from localStorage
-const getToken = () => localStorage.getItem('access_token');
+// Get token from storage (checks both localStorage and sessionStorage)
+const getToken = () => getStorageToken();
 
 // API request helper
 const apiRequest = async (endpoint, options = {}) => {
@@ -16,42 +17,70 @@ const apiRequest = async (endpoint, options = {}) => {
     ...options,
   };
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-  const data = await response.json();
-  
-  if (!response.ok) {
-    throw new Error(data.error || data.message || 'Request failed');
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+    
+    // Check if response is JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error('Server error: Invalid response from server');
+    }
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || data.message || 'Request failed');
+    }
+    
+    return data;
+  } catch (error) {
+    // Handle network errors
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('Network error: Unable to connect to server. Please check if the backend is running.');
+    }
+    throw error;
   }
-  
-  return data;
 };
 
 // FormData upload helper (for file uploads)
 const uploadRequest = async (endpoint, formData, method = 'POST') => {
   const token = getToken();
   
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    method,
-    headers: {
-      ...(token && { Authorization: `Bearer ${token}` }),
-    },
-    body: formData,
-  });
-  
-  const data = await response.json();
-  
-  if (!response.ok) {
-    throw new Error(data.error || data.message || 'Upload failed');
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method,
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: formData,
+    });
+    
+    // Check if response is JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error('Server error: Backend is not responding. Please make sure the backend server is running on port 5000.');
+    }
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || data.message || 'Upload failed');
+    }
+    
+    return data;
+  } catch (error) {
+    if (error.message.includes('Unexpected token')) {
+      throw new Error('Server error: Backend is not responding. Please make sure the backend server is running on port 5000.');
+    }
+    throw error;
   }
-  
-  return data;
 };
 
 // Auth APIs
 export const authAPI = {
   register: (data) => apiRequest('/register', { method: 'POST', body: JSON.stringify(data) }),
   login: (data) => apiRequest('/login', { method: 'POST', body: JSON.stringify(data) }),
-  verifyEmail: (token) => apiRequest(`/verify-email/${token}`),
+  verifyEmail: (token) => apiRequest(`/verify-email/${token}`, { method: 'GET' }),
   resendVerification: (email) => apiRequest('/resend-verification', { method: 'POST', body: JSON.stringify({ email }) }),
   forgotPassword: (email) => apiRequest('/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
   resetPassword: (token, password) => apiRequest(`/reset-password/${token}`, { method: 'POST', body: JSON.stringify({ password }) }),
@@ -69,6 +98,10 @@ export const productAPI = {
   create: (formData) => uploadRequest('/products', formData, 'POST'),
   update: (id, formData) => uploadRequest(`/products/${id}`, formData, 'PUT'),
   delete: (id) => apiRequest(`/products/${id}`, { method: 'DELETE' }),
+  updateStock: (id, stock_quantity, action = 'set') => apiRequest(`/products/${id}/stock`, { 
+    method: 'PUT', 
+    body: JSON.stringify({ stock_quantity, action }) 
+  }),
   addImages: (id, formData) => uploadRequest(`/products/${id}/images`, formData, 'POST'),
   deleteImage: (productId, imageId) => apiRequest(`/products/${productId}/images/${imageId}`, { method: 'DELETE' }),
   setPrimaryImage: (productId, imageId) => apiRequest(`/products/${productId}/images/${imageId}/primary`, { method: 'PUT' }),
@@ -102,7 +135,10 @@ export const orderAPI = {
   getById: (id) => apiRequest(`/orders/${id}`),
   cancel: (id) => apiRequest(`/orders/${id}/cancel`, { method: 'PUT' }),
   getAllOrders: () => apiRequest('/orders'),
-  updateStatus: (id, status) => apiRequest(`/orders/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) }),
+  updateStatus: (id, status, estimatedDeliveryDate) => apiRequest(`/orders/${id}/status`, { 
+    method: 'PUT', 
+    body: JSON.stringify({ status, estimatedDeliveryDate }) 
+  }),
 };
 
 // Address APIs
@@ -117,6 +153,7 @@ export const addressAPI = {
 export const appointmentAPI = {
   book: (data) => apiRequest('/appointments', { method: 'POST', body: JSON.stringify(data) }),
   getMyAppointments: () => apiRequest('/appointments/my-appointments'),
+  getSlotAvailability: (date) => apiRequest(`/appointments/slot-availability?date=${date}`),
   edit: (id, data) => apiRequest(`/appointments/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   cancel: (id) => apiRequest(`/appointments/${id}/cancel`, { method: 'PUT' }),
   getRepairStatus: (token) => apiRequest(`/appointments/repair/${token}`),
@@ -153,6 +190,17 @@ export const faqAPI = {
 export const feedbackAPI = {
   create: (data) => apiRequest('/feedback', { method: 'POST', body: JSON.stringify(data) }),
   getProductRatings: (productId) => apiRequest(`/feedback/product/${productId}`),
+  getMyReviews: () => apiRequest('/feedback/my-reviews'),
+  deleteReview: (id) => apiRequest(`/feedback/${id}`, { method: 'DELETE' }),
+};
+
+// Wishlist APIs
+export const wishlistAPI = {
+  get: () => apiRequest('/wishlist'),
+  add: (productId) => apiRequest('/wishlist', { method: 'POST', body: JSON.stringify({ productId }) }),
+  remove: (productId) => apiRequest(`/wishlist/${productId}`, { method: 'DELETE' }),
+  toggle: (productId) => apiRequest('/wishlist/toggle', { method: 'POST', body: JSON.stringify({ productId }) }),
+  check: (productId) => apiRequest(`/wishlist/check/${productId}`),
 };
 
 // Admin APIs
@@ -171,9 +219,16 @@ export const adminAPI = {
   deleteTechnician: (id) => apiRequest(`/admin/technicians/${id}`, { method: 'DELETE' }),
 };
 
-// Utility functions
-export const setToken = (token) => localStorage.setItem('access_token', token);
-export const removeToken = () => localStorage.removeItem('access_token');
+// User APIs
+export const userAPI = {
+  getProfile: () => apiRequest('/profile'),
+  updateProfile: (data) => apiRequest('/users/me', { method: 'PUT', body: JSON.stringify(data) }),
+  uploadProfileImage: (formData) => uploadRequest('/users/upload-image', formData, 'POST'),
+  changePassword: (data) => apiRequest('/change-password', { method: 'PUT', body: JSON.stringify(data) }),
+};
+
+// Utility functions - token storage is handled by AuthContext/storage utility
+export { getToken };
 export const isLoggedIn = () => !!getToken();
 
 export default apiRequest;
