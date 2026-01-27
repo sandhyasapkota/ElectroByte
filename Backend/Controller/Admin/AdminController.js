@@ -10,6 +10,7 @@ const getDashboardStats = async (req, res) => {
     const totalUsers = await User.count({ where: { role: 'user' } });
     const totalOrders = await Order.count();
     const totalAppointments = await Appointment.count();
+    const totalTechnicians = await Technician.count();
     const totalProducts = await Product.count();
     const pendingOrders = await Order.count({ where: { status: 'pending' } });
     const pendingAppointments = await Appointment.count({ where: { status: 'pending' } });
@@ -21,19 +22,39 @@ const getDashboardStats = async (req, res) => {
     });
     const totalRevenue = revenueResult || 0;
     
-    // Recent orders
-    const recentOrders = await Order.findAll({
+    // Recent orders with User data
+    const recentOrdersData = await Order.findAll({
       limit: 5,
       order: [['createdAt', 'DESC']],
-      include: [{ model: User, attributes: ['username', 'email'] }]
+      include: [{ 
+        model: User, 
+        attributes: ['id', 'username', 'email'],
+        required: false
+      }]
     });
     
-    // Recent appointments
-    const recentAppointments = await Appointment.findAll({
+    // Convert to plain JSON to ensure User data is included
+    const recentOrders = recentOrdersData.map(order => ({
+      ...order.toJSON(),
+      User: order.User ? order.User.toJSON() : null
+    }));
+    
+    // Recent appointments with User data
+    const recentAppointmentsData = await Appointment.findAll({
       limit: 5,
       order: [['createdAt', 'DESC']],
-      include: [{ model: User, attributes: ['username', 'email'] }]
+      include: [{ 
+        model: User, 
+        attributes: ['id', 'username', 'email'],
+        required: false
+      }]
     });
+    
+    // Convert to plain JSON to ensure User data is included
+    const recentAppointments = recentAppointmentsData.map(apt => ({
+      ...apt.toJSON(),
+      User: apt.User ? apt.User.toJSON() : null
+    }));
     
     // Monthly order stats for last 6 months (for line chart)
     const sixMonthsAgo = new Date();
@@ -114,6 +135,7 @@ const getDashboardStats = async (req, res) => {
           totalOrders,
           totalAppointments,
           totalProducts,
+          totalTechnicians,
           pendingOrders,
           pendingAppointments,
           openTickets,

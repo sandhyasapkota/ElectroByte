@@ -1,6 +1,11 @@
 import { Ticket, TicketReply, User } from "../../Model/index.js";
 import { v4 as uuidv4 } from 'uuid';
 
+const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email || '');
+const isValidName = (name) => typeof name === 'string' && name.trim().length >= 2 && name.length <= 100;
+const isValidSubject = (subject) => typeof subject === 'string' && subject.trim().length >= 5 && subject.length <= 200;
+const isValidMessage = (message) => typeof message === 'string' && message.trim().length >= 10 && message.length <= 2000;
+
 // Generate ticket number
 const generateTicketNumber = () => {
   return 'TKT-' + Date.now().toString(36).toUpperCase() + uuidv4().substring(0, 4).toUpperCase();
@@ -14,6 +19,19 @@ const createTicket = async (req, res) => {
     
     if (!name || !email || !subject || !message) {
       return res.status(400).json({ error: "Name, email, subject and message are required" });
+    }
+
+    if (!isValidName(name)) {
+      return res.status(400).json({ error: "Name must be 2-100 characters" });
+    }
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ error: "Invalid email format" });
+    }
+    if (!isValidSubject(subject)) {
+      return res.status(400).json({ error: "Subject must be 5-200 characters" });
+    }
+    if (!isValidMessage(message)) {
+      return res.status(400).json({ error: "Message must be 10-2000 characters" });
     }
     
     const ticket = await Ticket.create({
@@ -40,6 +58,19 @@ const submitContactForm = async (req, res) => {
     
     if (!name || !email || !subject || !message) {
       return res.status(400).json({ error: "All fields are required" });
+    }
+
+    if (!isValidName(name)) {
+      return res.status(400).json({ error: "Name must be 2-100 characters" });
+    }
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ error: "Invalid email format" });
+    }
+    if (!isValidSubject(subject)) {
+      return res.status(400).json({ error: "Subject must be 5-200 characters" });
+    }
+    if (!isValidMessage(message)) {
+      return res.status(400).json({ error: "Message must be 10-2000 characters" });
     }
     
     const ticket = await Ticket.create({
@@ -114,6 +145,10 @@ const addReply = async (req, res) => {
     if (!message) {
       return res.status(400).json({ error: "Message is required" });
     }
+
+    if (!isValidMessage(message)) {
+      return res.status(400).json({ error: "Message must be 10-2000 characters" });
+    }
     
     // Check ticket exists and user has access
     const ticket = await Ticket.findByPk(id);
@@ -187,6 +222,9 @@ const replyToTicket = async (req, res) => {
     
     // Add as chat reply
     if (adminReply) {
+      if (!isValidMessage(adminReply)) {
+        return res.status(400).json({ error: "Reply must be 10-2000 characters" });
+      }
       await TicketReply.create({
         ticketId: id,
         userId,
