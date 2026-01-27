@@ -2,18 +2,35 @@ import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 dotenv.config();
 
+// Log email configuration status
+console.log('📧 Email Configuration Check:');
+console.log('  NODE_ENV:', process.env.NODE_ENV);
+console.log('  SMTP_USER:', process.env.SMTP_USER ? '✓ Set' : '✗ Not set');
+console.log('  SMTP_PASS:', process.env.SMTP_PASS ? '✓ Set' : '✗ Not set');
+
 // Create transporter - configure with your SMTP settings
 const createTransporter = () => {
   // For production with Gmail
   if (process.env.NODE_ENV === 'production' && process.env.SMTP_USER) {
     console.log('📧 Email service configured with Gmail SMTP');
-    return nodemailer.createTransport({
-      service: 'gmail', // Use Gmail service for easier configuration
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
       auth: {
         user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS, // Must be App Password, not regular password
+        pass: process.env.SMTP_PASS,
       },
     });
+    
+    // Verify transporter configuration
+    transporter.verify((error, success) => {
+      if (error) {
+        console.error('❌ Email transporter verification failed:', error.message);
+      } else {
+        console.log('✅ Email transporter is ready to send emails');
+      }
+    });
+    
+    return transporter;
   }
   
   // Development: Use console logging
@@ -37,87 +54,83 @@ const emailTemplates = {
   // Email verification template
   verification: (username, verificationLink) => ({
     subject: 'Verify Your ElectroByte Account',
-    html: `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #2563eb, #7c3aed); padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-          .header h1 { color: white; margin: 0; }
-          .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
-          .button { display: inline-block; background: linear-gradient(135deg, #2563eb, #7c3aed); color: white !important; padding: 15px 30px; text-decoration: none; border-radius: 8px; margin: 20px 0; }
-          .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>🖥️ ElectroByte</h1>
-          </div>
-          <div class="content">
-            <h2>Hi ${username},</h2>
-            <p>Welcome to ElectroByte! Please verify your email address to activate your account.</p>
-            <p style="text-align: center;">
-              <a href="${verificationLink}" class="button">Verify Email Address</a>
-            </p>
-            <p>Or copy and paste this link in your browser:</p>
-            <p style="word-break: break-all; color: #2563eb;">${verificationLink}</p>
-            <p>This link will expire in 24 hours.</p>
-            <p>If you didn't create an account, you can safely ignore this email.</p>
-          </div>
-          <div class="footer">
-            <p>© 2026 ElectroByte. All rights reserved.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `
+    html: `<!DOCTYPE html>
+<html>
+<head>
+<style>
+body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f3f4f6; }
+.container { max-width: 600px; margin: 0 auto; padding: 20px; }
+.header { background: linear-gradient(135deg, #2563eb, #7c3aed); padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+.header h1 { color: white; margin: 0; }
+.content { background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; }
+.button { display: inline-block; background: linear-gradient(135deg, #2563eb, #7c3aed); color: white !important; padding: 15px 30px; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: bold; }
+.footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<h1>🖥️ ElectroByte</h1>
+</div>
+<div class="content">
+<h2>Hi ${username},</h2>
+<p>Welcome to ElectroByte! Please verify your email address to activate your account.</p>
+<p style="text-align: center;">
+<a href="${verificationLink}" class="button">Verify Email Address</a>
+</p>
+<p>Or copy and paste this link in your browser:</p>
+<p style="word-break: break-all; color: #2563eb; font-size: 14px;">${verificationLink}</p>
+<p>This link will expire in 24 hours.</p>
+<p>If you didn't create an account, you can safely ignore this email.</p>
+</div>
+<div class="footer">
+<p>© 2026 ElectroByte. All rights reserved.</p>
+</div>
+</div>
+</body>
+</html>`
   }),
 
   // Password reset template
   passwordReset: (username, resetLink) => ({
     subject: 'Reset Your ElectroByte Password',
-    html: `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #2563eb, #7c3aed); padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-          .header h1 { color: white; margin: 0; }
-          .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
-          .button { display: inline-block; background: linear-gradient(135deg, #dc2626, #ea580c); color: white !important; padding: 15px 30px; text-decoration: none; border-radius: 8px; margin: 20px 0; }
-          .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
-          .warning { background: #fef3c7; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>🖥️ ElectroByte</h1>
-          </div>
-          <div class="content">
-            <h2>Hi ${username},</h2>
-            <p>We received a request to reset your password. Click the button below to create a new password:</p>
-            <p style="text-align: center;">
-              <a href="${resetLink}" class="button">Reset Password</a>
-            </p>
-            <p>Or copy and paste this link in your browser:</p>
-            <p style="word-break: break-all; color: #2563eb;">${resetLink}</p>
-            <div class="warning">
-              <strong>⚠️ Security Notice:</strong> This link will expire in 1 hour. If you didn't request a password reset, please ignore this email.
-            </div>
-          </div>
-          <div class="footer">
-            <p>© 2026 ElectroByte. All rights reserved.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `
+    html: `<!DOCTYPE html>
+<html>
+<head>
+<style>
+body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f3f4f6; }
+.container { max-width: 600px; margin: 0 auto; padding: 20px; }
+.header { background: linear-gradient(135deg, #2563eb, #7c3aed); padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+.header h1 { color: white; margin: 0; }
+.content { background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; }
+.button { display: inline-block; background: linear-gradient(135deg, #dc2626, #ea580c); color: white !important; padding: 15px 30px; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: bold; }
+.footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+.warning { background: #fef3c7; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b; margin-top: 20px; }
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<h1>🖥️ ElectroByte</h1>
+</div>
+<div class="content">
+<h2>Hi ${username},</h2>
+<p>We received a request to reset your password. Click the button below to create a new password:</p>
+<p style="text-align: center;">
+<a href="${resetLink}" class="button">Reset Password</a>
+</p>
+<p>Or copy and paste this link in your browser:</p>
+<p style="word-break: break-all; color: #2563eb; font-size: 14px;">${resetLink}</p>
+<div class="warning">
+<strong>⚠️ Security Notice:</strong> This link will expire in 1 hour. If you didn't request a password reset, please ignore this email.
+</div>
+</div>
+<div class="footer">
+<p>© 2026 ElectroByte. All rights reserved.</p>
+</div>
+</div>
+</body>
+</html>`
   }),
 
   // Order confirmation template
@@ -271,12 +284,21 @@ export const sendVerificationEmail = async (email, username, token) => {
   const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email/${token}`;
   const template = emailTemplates.verification(username, verificationLink);
   
-  return transporter.sendMail({
-    from: process.env.EMAIL_FROM || '"ElectroByte" <noreply@electrobyte.com>',
-    to: email,
-    subject: template.subject,
-    html: template.html
-  });
+  console.log(`📧 Attempting to send verification email to: ${email}`);
+  
+  try {
+    const result = await transporter.sendMail({
+      from: process.env.EMAIL_FROM || '"ElectroByte" <noreply@electrobyte.com>',
+      to: email,
+      subject: template.subject,
+      html: template.html
+    });
+    console.log(`✅ Verification email sent successfully to ${email}. MessageId: ${result.messageId}`);
+    return result;
+  } catch (error) {
+    console.error(`❌ Failed to send verification email to ${email}:`, error.message);
+    throw error;
+  }
 };
 
 export const sendPasswordResetEmail = async (email, username, token) => {

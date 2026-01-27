@@ -72,6 +72,24 @@ export const checkoutSchema = z.object({
   path: ['billingAddress'],
 });
 
+// Simple order schema (Checkout page)
+export const orderSchema = z.object({
+  shippingAddress: z
+    .string()
+    .min(10, 'Shipping address must be at least 10 characters')
+    .max(500, 'Shipping address must be less than 500 characters'),
+  contactPhone: z
+    .string()
+    .min(1, 'Contact phone is required')
+    .regex(/^[0-9]{10,15}$/, 'Phone number must be 10-15 digits'),
+  notes: z
+    .string()
+    .max(500, 'Notes must be less than 500 characters')
+    .optional()
+    .or(z.literal('')),
+});
+
 // Type exports
 export const AddressFormData = addressSchema;
 export const CheckoutFormData = checkoutSchema;
+export const OrderFormData = orderSchema;

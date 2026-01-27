@@ -18,7 +18,8 @@ export const registerSchema = z.object({
     .min(1, 'Username is required')
     .min(3, 'Username must be at least 3 characters')
     .max(50, 'Username must be less than 50 characters')
-    .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
+    .regex(/^[a-zA-Z0-9_ ]+$/, 'Username can only contain letters, numbers, underscores, and spaces')
+    .refine((val) => val.trim().length >= 3, { message: 'Username must be at least 3 characters' }),
   email: z
     .string()
     .min(1, 'Email is required')
@@ -95,7 +96,9 @@ export const profileUpdateSchema = z.object({
     .string()
     .min(1, 'Username is required')
     .min(3, 'Username must be at least 3 characters')
-    .max(50, 'Username must be less than 50 characters'),
+    .max(50, 'Username must be less than 50 characters')
+    .regex(/^[a-zA-Z0-9_ ]+$/, 'Username can only contain letters, numbers, underscores, and spaces')
+    .refine((val) => val.trim().length >= 3, { message: 'Username must be at least 3 characters' }),
   email: z
     .string()
     .min(1, 'Email is required')
@@ -108,6 +111,7 @@ export const profileUpdateSchema = z.object({
     }),
   address: z
     .string()
+    .max(500, 'Address must be less than 500 characters')
     .optional(),
 });
 

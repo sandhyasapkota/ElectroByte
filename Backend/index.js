@@ -24,13 +24,30 @@ import {
   adminRoute,
   wishlistRouter
 } from './Routes/index.js';
-import {testConnection, sequelize} from './Database/db.js';
+import { testConnection, sequelize } from './Database/db.js';
 import { authenticateToken } from './Middleware/token-middleware.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+const allowedOrigins = (process.env.CORS_ORIGIN || process.env.FRONTEND_URL || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const corsOptions = allowedOrigins.length
+  ? {
+      origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+        return callback(new Error('Not allowed by CORS'));
+      },
+      credentials: true,
+    }
+  : { origin: true, credentials: true };
+
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
@@ -40,9 +57,9 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Public routes (no auth required)
 app.use('/api', authRouter);
 app.use('/api/faqs', faqRoute);
-app.use('/api/products', productRoute);  // Products browsing is public
-app.use('/api/categories', categoryRoute);  // Categories are public
-app.use('/api/brands', brandRoute);  // Brands are public
+app.use('/api/products', productRoute); // Products browsing is public
+app.use('/api/categories', categoryRoute); // Categories are public
+app.use('/api/brands', brandRoute); // Brands are public
 app.get('/api/feedback/product/:productId', (req, res, next) => {
   // Product ratings are public
   import('./Controller/Feedback/FeedbackController.js').then(({ getProductRatings }) => {
@@ -74,10 +91,11 @@ app.use('/api/admin', adminRoute);
 app.listen(PORT, async () => {
   console.log(`Server is running on port ${PORT}`);
   await testConnection();
-  
-  // Use alter: true in development (preserves data)
-  await sequelize.sync({ alter: true });
-  console.log("✅ Database synced!");
+
+  if (process.env.NODE_ENV !== 'production') {
+    await sequelize.sync({ alter: true });
+    console.log('Database synced (dev).');
+  }
 });
 
 export default app;

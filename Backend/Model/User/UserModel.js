@@ -10,7 +10,10 @@ const User = sequelize.define("User", {
   username: {
     type: DataTypes.STRING,
     allowNull: false,
-    unique: true,
+    validate: {
+      len: [3, 50],
+      is: /^(?!\s*$)[a-zA-Z0-9_ ]+$/i,
+    },
   },
   email: {
     type: DataTypes.STRING,
@@ -18,6 +21,7 @@ const User = sequelize.define("User", {
     unique: true,
     validate: {
       isEmail: true,
+      len: [5, 254],
     },
   },
   password: {
@@ -27,6 +31,9 @@ const User = sequelize.define("User", {
   phone: {
     type: DataTypes.STRING,
     allowNull: true,
+    validate: {
+      is: /^[0-9]{10,15}$/i,
+    },
   },
   role: {
     type: DataTypes.ENUM('user', 'admin', 'technician'),
@@ -36,6 +43,9 @@ const User = sequelize.define("User", {
   address: {
     type: DataTypes.TEXT,
     allowNull: true,
+    validate: {
+      len: [0, 500],
+    },
   },
   profileImage: {
     type: DataTypes.TEXT,
