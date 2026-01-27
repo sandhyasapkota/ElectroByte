@@ -12,6 +12,7 @@ export {
 export {
   addressSchema,
   checkoutSchema,
+  orderSchema,
 } from './address.schema';
 
 // Contact/Support validation schemas

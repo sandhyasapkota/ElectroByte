@@ -4,8 +4,9 @@ import { FaBox, FaTruck, FaCheck, FaTimes, FaClock, FaShoppingBag, FaArrowLeft, 
 import { orderAPI } from "../services/api";
 import { useToast } from "../Component/Toast";
 import Pagination, { usePagination } from "../Component/Pagination";
+import { API_ORIGIN } from "../lib/config";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = API_ORIGIN;
 
 // Helper to get image URL
 const getImageUrl = (url) => {
@@ -30,6 +31,7 @@ const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selectedOrder, setSelectedOrder] = useState(null);
   
   const { currentPage, totalPages, totalItems, paginatedItems: paginatedOrders, goToPage } = usePagination(orders, 10);
 
@@ -81,6 +83,16 @@ const Orders = () => {
       case 'cancelled': return 'bg-red-100 text-red-700';
       default: return 'bg-gray-100 text-gray-700';
     }
+  };
+
+  const getOrderTotals = (order) => {
+    const subtotal = (order?.OrderItems || []).reduce((sum, item) => {
+      return sum + (Number(item.price) || 0) * (Number(item.quantity) || 0);
+    }, 0);
+    return {
+      subtotal,
+      total: Number(order?.totalAmount) || subtotal,
+    };
   };
 
   if (loading) {
@@ -168,6 +180,12 @@ const Orders = () => {
                       <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
                         {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                       </span>
+                      <button
+                        onClick={() => setSelectedOrder(order)}
+                        className="text-blue-600 text-sm font-medium px-3 py-1 hover:bg-blue-50 rounded-lg transition-colors"
+                      >
+                        View Details
+                      </button>
                       {order.status === 'pending' && (
                         <button 
                           onClick={() => cancelOrder(order.id)}
@@ -227,7 +245,123 @@ const Orders = () => {
             </div>
           )}
         </div>
-      </div>
+      {/* Order Details Modal */}
+      {selectedOrder && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setSelectedOrder(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-5 border-b flex items-center justify-between sticky top-0 bg-white z-10">
+              <div>
+                <p className="text-xs text-gray-500">Order Details</p>
+                <h3 className="text-lg font-bold text-gray-800">{selectedOrder.orderId}</h3>
+              </div>
+              <button
+                onClick={() => setSelectedOrder(null)}
+                className="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-500"
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              <div className="flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white rounded-xl shadow flex items-center justify-center">
+                    {getStatusIcon(selectedOrder.status)}
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Status</p>
+                    <p className="font-semibold text-gray-800 capitalize">{selectedOrder.status}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-gray-500">Ordered On</p>
+                  <p className="font-medium text-gray-800">
+                    {new Date(selectedOrder.createdAt).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
+                  <p className="text-sm text-gray-500 mb-1">Shipping Address</p>
+                  <p className="text-gray-800 text-sm">{selectedOrder.shippingAddress || 'N/A'}</p>
+                </div>
+                <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
+                  <p className="text-sm text-gray-500 mb-1">Contact Phone</p>
+                  <p className="text-gray-800 text-sm">{selectedOrder.contactPhone || 'N/A'}</p>
+                </div>
+                <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
+                  <p className="text-sm text-gray-500 mb-1">Estimated Delivery</p>
+                  <p className="text-gray-800 text-sm">
+                    {selectedOrder.estimatedDeliveryDate
+                      ? new Date(selectedOrder.estimatedDeliveryDate).toLocaleDateString()
+                      : 'Not set'}
+                  </p>
+                </div>
+              </div>
+
+              {selectedOrder.notes && (
+                <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
+                  <p className="text-sm text-gray-500 mb-1">Order Notes</p>
+                  <p className="text-gray-800 text-sm">{selectedOrder.notes}</p>
+                </div>
+              )}
+
+              <div>
+                <h4 className="font-semibold text-gray-800 mb-3">Items</h4>
+                <div className="space-y-3">
+                  {selectedOrder.OrderItems?.map((item) => (
+                    <div key={item.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl">
+                      <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                        <img 
+                          src={getProductImageUrl(item.Product)} 
+                          alt={item.productName}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-800">{item.productName}</p>
+                        <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-gray-500">Price</p>
+                        <p className="font-semibold text-gray-800">NPR {item.price}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {(() => {
+                const totals = getOrderTotals(selectedOrder);
+                return (
+                  <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
+                    <div className="flex items-center justify-between text-sm text-gray-600">
+                      <span>Subtotal</span>
+                      <span>NPR {totals.subtotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm text-gray-600 mt-2">
+                      <span>Shipping</span>
+                      <span className="text-green-600 font-medium">Free</span>
+                    </div>
+                    <div className="flex items-center justify-between text-base font-bold mt-3">
+                      <span>Total</span>
+                      <span className="text-blue-600">NPR {totals.total.toFixed(2)}</span>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

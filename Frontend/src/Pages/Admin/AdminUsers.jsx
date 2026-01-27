@@ -3,12 +3,21 @@ import { useNavigate, Link } from "react-router-dom";
 import { 
   FaUsers, FaSearch, FaBan, FaCheck, FaChevronLeft, 
   FaChevronRight, FaUserShield, FaUser, FaTools, FaTimes,
-  FaUserCog, FaTrash
+  FaUserCog, FaTrash, FaEye
 } from "react-icons/fa";
 import { adminAPI } from "../../services/api";
+import { API_ORIGIN } from "../../lib/config";
 import { useToast } from "../../Component/Toast";
 import { getUser } from "../../lib/storage";
 import AdminSidebar from "./AdminSidebar";
+
+const API_BASE = API_ORIGIN;
+
+const getImageUrl = (url) => {
+  if (!url) return "";
+  if (url.startsWith("http")) return url;
+  return `${API_BASE}${url}`;
+};
 
 const AdminUsers = () => {
   const navigate = useNavigate();
@@ -23,22 +32,25 @@ const AdminUsers = () => {
   // Modal states
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [detailsUser, setDetailsUser] = useState(null);
   const [newRole, setNewRole] = useState("");
   const [technicianData, setTechnicianData] = useState({ specialization: "", experience: 0 });
   const [updating, setUpdating] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
 
   useEffect(() => {
-    checkAdminAccess();
-    fetchUsers();
+    const isAdmin = checkAdminAccess();
+    if (isAdmin) fetchUsers();
   }, []);
 
   const checkAdminAccess = () => {
     const user = getUser() || {};
     if (user.role !== "admin") {
       navigate("/login");
+      return false;
     }
     setCurrentUserId(user.id);
+    return true;
   };
 
   const fetchUsers = async () => {
@@ -70,6 +82,10 @@ const AdminUsers = () => {
     setNewRole(user.role);
     setTechnicianData({ specialization: "", experience: 0 });
     setShowRoleModal(true);
+  };
+
+  const openDetailsModal = (user) => {
+    setDetailsUser(user);
   };
 
   const handleRoleChange = async () => {
@@ -149,14 +165,14 @@ const AdminUsers = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex">
       <AdminSidebar active="Users" />
       
-      <main className="flex-1 ml-64 p-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">User Management</h1>
+      <main className="flex-1 ml-0 lg:ml-64 px-2 sm:px-4 md:px-8 py-4 md:py-8">
+        <div className="mb-4 md:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">User Management</h1>
           <p className="text-gray-500 mt-2">View and manage all registered users</p>
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 flex flex-wrap gap-4 items-center border border-gray-100">
+        <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6 mb-4 md:mb-6 flex flex-wrap gap-3 md:gap-4 items-center border border-gray-100">
           <div className="flex-1 min-w-[200px] relative">
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
@@ -181,7 +197,8 @@ const AdminUsers = () => {
 
         {/* Users Table */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
-          <table className="w-full">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[900px]">
             <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
@@ -197,9 +214,18 @@ const AdminUsers = () => {
                 <tr key={user.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold">
-                        {user.username?.charAt(0).toUpperCase()}
-                      </div>
+                      {user.profileImage ? (
+                        <img
+                          src={getImageUrl(user.profileImage)}
+                          alt={user.username}
+                          className="w-10 h-10 rounded-full object-cover border"
+                          onError={(e) => { e.currentTarget.style.display = "none"; }}
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold">
+                          {user.username?.charAt(0).toUpperCase()}
+                        </div>
+                      )}
                       <div>
                         <p className="font-medium">{user.username}</p>
                         <p className="text-sm text-gray-500">{user.phone || 'No phone'}</p>
@@ -227,6 +253,13 @@ const AdminUsers = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex gap-2">
+                      <button
+                        onClick={() => openDetailsModal(user)}
+                        className="px-3 py-1 rounded-lg text-sm bg-blue-100 text-blue-600 hover:bg-blue-200"
+                        title="View Details"
+                      >
+                        <FaEye className="inline mr-1" /> View
+                      </button>
                       <button
                         onClick={() => openRoleModal(user)}
                         className={`px-3 py-1 rounded-lg text-sm bg-purple-100 text-purple-600 hover:bg-purple-200 ${user.id === currentUserId ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -260,11 +293,12 @@ const AdminUsers = () => {
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          </div>
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="px-6 py-4 border-t flex items-center justify-between">
+            <div className="px-6 py-4 border-t flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-gray-500">
                 Showing {(currentPage - 1) * usersPerPage + 1} to {Math.min(currentPage * usersPerPage, filteredUsers.length)} of {filteredUsers.length} users
               </p>
@@ -374,6 +408,88 @@ const AdminUsers = () => {
                   className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
                   {updating ? 'Updating...' : 'Update Role'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* User Details Modal */}
+        {detailsUser && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl w-full max-w-lg p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold">User Profile</h2>
+                <button onClick={() => setDetailsUser(null)} className="text-gray-500 hover:text-gray-700">
+                  <FaTimes />
+                </button>
+              </div>
+
+              <div className="flex items-center gap-4 mb-6">
+                {detailsUser.profileImage ? (
+                  <img
+                    src={getImageUrl(detailsUser.profileImage)}
+                    alt={detailsUser.username}
+                    className="w-16 h-16 rounded-full object-cover border"
+                    onError={(e) => { e.currentTarget.style.display = "none"; }}
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-2xl font-bold">
+                    {detailsUser.username?.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div>
+                  <p className="text-lg font-semibold">{detailsUser.username}</p>
+                  <p className="text-sm text-gray-500">{detailsUser.email}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-gray-500">Phone</p>
+                  <p className="font-medium">{detailsUser.phone || "No phone"}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Role</p>
+                  <p className="font-medium capitalize">{detailsUser.role}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Status</p>
+                  <p className={`font-medium ${detailsUser.isBlocked ? "text-red-600" : "text-green-600"}`}>
+                    {detailsUser.isBlocked ? "Blocked" : "Active"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Email Verified</p>
+                  <p className={`font-medium ${detailsUser.isEmailVerified ? "text-green-600" : "text-gray-700"}`}>
+                    {detailsUser.isEmailVerified ? "Verified" : "Not Verified"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Joined</p>
+                  <p className="font-medium">
+                    {detailsUser.createdAt ? new Date(detailsUser.createdAt).toLocaleDateString() : "N/A"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Last Updated</p>
+                  <p className="font-medium">
+                    {detailsUser.updatedAt ? new Date(detailsUser.updatedAt).toLocaleDateString() : "N/A"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <p className="text-gray-500 text-sm">Address</p>
+                <p className="font-medium">{detailsUser.address || "No address provided"}</p>
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setDetailsUser(null)}
+                  className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200"
+                >
+                  Close
                 </button>
               </div>
             </div>

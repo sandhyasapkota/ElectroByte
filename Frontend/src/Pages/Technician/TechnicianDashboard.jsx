@@ -40,7 +40,7 @@ const TechnicianDashboard = () => {
       navigate("/login");
     }
   };
-  
+
   const fetchJobs = async () => {
     try {
       const response = await appointmentAPI.getTechnicianJobs();
@@ -144,7 +144,7 @@ const TechnicianDashboard = () => {
       </div>
     );
   }
-  
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}

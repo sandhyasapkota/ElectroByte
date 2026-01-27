@@ -4,6 +4,8 @@ import { productAPI, cartAPI, wishlistAPI } from '../services/api';
 import { useToast } from '../Component/Toast';
 import { getToken } from '../lib/storage';
 import { FaHeart, FaRegHeart, FaSpinner, FaLaptop, FaTools, FaShieldAlt, FaTruck, FaHeadset, FaStar, FaArrowRight, FaPlay, FaQuestionCircle, FaUserShield, FaTags } from 'react-icons/fa';
+import { API_ORIGIN } from '../lib/config';
+import { fetchRatingsForProducts, getRatingData } from '../lib/ratings';
 // import laptopImg from '../assets/Images/laptop.png';
 import legionImg from '../assets/Images/legion.png';
 
@@ -30,17 +32,19 @@ const features = [
   { icon: <FaTags />, title: 'Amazing Savings', description: 'Up to 70% off new products, you can be sure of the best price.' },
 ];
 
-const API_BASE = "http://localhost:5000";
-
 // Helper to get image URL
 const getImageUrl = (url) => {
   if (!url || url === 'null' || url === 'undefined') return null;
   if (url.startsWith("http")) return url;
-  return `${API_BASE}${url}`;
+  return `${API_ORIGIN}${url}`;
 };
 
 // --- Reusable Components ---
-const ProductCard = ({ id, image, name, price, oldPrice, rating, reviews, onAddToCart, isInWishlist, onToggleWishlist, togglingWishlist }) => (
+const ProductCard = ({ id, image, name, price, oldPrice, rating, reviews, onAddToCart, isInWishlist, onToggleWishlist, togglingWishlist }) => {
+  const ratingValue = Number.isFinite(Number(rating)) ? Number(rating) : 0;
+  const reviewCount = Number.isFinite(Number(reviews)) ? Number(reviews) : 0;
+
+  return (
   <div className="bg-white border border-gray-200 rounded-xl p-4 flex-shrink-0 w-64 shadow-sm hover:shadow-lg transition-all duration-300 group relative">
     {/* Wishlist Heart Button */}
     <button
@@ -90,8 +94,15 @@ const ProductCard = ({ id, image, name, price, oldPrice, rating, reviews, onAddT
       </div>
     </Link>
     <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-      <span className="text-yellow-400">{'★'.repeat(rating || 4)}{'☆'.repeat(5 - (rating || 4))}</span>
-      <span className="text-gray-400">({reviews || 0})</span>
+      <div className="flex items-center gap-1">
+        {[...Array(5)].map((_, i) => (
+          <FaStar
+            key={i}
+            className={`text-sm ${i < Math.floor(ratingValue) ? "text-yellow-400" : "text-gray-200"}`}
+          />
+        ))}
+      </div>
+      <span className="text-gray-400">({reviewCount})</span>
     </div>
     <Link to={`/product/${id}`}>
       <h3 className="text-sm font-medium h-10 overflow-hidden mb-2 hover:text-blue-600 transition-colors line-clamp-2">{name}</h3>
@@ -112,7 +123,8 @@ const ProductCard = ({ id, image, name, price, oldPrice, rating, reviews, onAddT
       </button>
     </div>
   </div>
-);
+  );
+};
 
 const ProductCarousel = ({ products, onAddToCart, wishlistIds, onToggleWishlist, togglingWishlist }) => {
   const scrollRef = useRef(null);
@@ -215,7 +227,7 @@ const HomePage = () => {
       const fetchedProducts = Array.isArray(response) ? response : (response.data?.products || response.data || []);
       console.log("Fetched Products:", fetchedProducts);
       
-      setProducts(fetchedProducts.map(p => {
+      const normalizedProducts = fetchedProducts.map(p => {
         // Get primary image from images array or fallback to image_url
         let imageUrl = null;
         if (p.images && p.images.length > 0) {
@@ -235,10 +247,22 @@ const HomePage = () => {
           price: parseFloat(p.price),
           oldPrice: p.oldPrice ? parseFloat(p.oldPrice) : null,
           image: finalImage,
-          rating: p.rating || 4,
-          reviews: p.reviews || Math.floor(Math.random() * 100) + 10
+          rating: 0,
+          reviews: 0
         };
-      }));
+      });
+
+      const ratingMap = await fetchRatingsForProducts(fetchedProducts);
+      const productsWithRatings = normalizedProducts.map((product) => {
+        const ratingData = getRatingData(ratingMap, product.id);
+        return {
+          ...product,
+          rating: ratingData.averageRating,
+          reviews: ratingData.totalReviews,
+        };
+      });
+
+      setProducts(productsWithRatings);
     } catch (error) {
       console.error('Error fetching products:', error);
       // Use fallback sample products if API fails
@@ -586,7 +610,7 @@ const HomePage = () => {
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-800 mb-4">Why Choose ElectroByte?</h2>
             <p className="text-gray-500 max-w-2xl mx-auto">We're committed to providing the best products and services</p>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {features.map((feature, index) => (
               <div key={index} className="group bg-white rounded-2xl p-6 text-center shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-100">
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 text-white inline-flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">

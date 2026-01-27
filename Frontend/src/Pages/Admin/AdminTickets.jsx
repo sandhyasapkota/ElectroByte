@@ -21,15 +21,17 @@ const AdminTickets = () => {
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
-    checkAdminAccess();
-    fetchTickets();
+    const isAdmin = checkAdminAccess();
+    if (isAdmin) fetchTickets();
   }, []);
 
   const checkAdminAccess = () => {
     const user = getUser() || {};
     if (user.role !== "admin") {
       navigate("/login");
+      return false;
     }
+    return true;
   };
 
   const fetchTickets = async () => {
@@ -139,7 +141,7 @@ const AdminTickets = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex">
       <AdminSidebar active="Tickets" />
       
-      <main className="flex-1 ml-64 p-8">
+      <main className="flex-1 ml-0 lg:ml-64 p-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Support Tickets</h1>
           <p className="text-gray-500 mt-2">Manage customer support tickets and contact inquiries</p>

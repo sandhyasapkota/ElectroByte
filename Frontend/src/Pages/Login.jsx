@@ -1,179 +1,271 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useAuth } from "../contexts/AuthContext";
+import { authAPI } from "../services/api";
+import { useToast } from "../Component/Toast";
+import { loginSchema } from "../validations";
+import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaExclamationTriangle } from "react-icons/fa";
+import logo from "../assets/Images/logo.png";
 
 const Login = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    email: "",
-    password: ""
+  const toast = useToast();
+  const { login } = useAuth();
+  
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [apiError, setApiError] = useState("");
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState("");
+
+  // React Hook Form with Zod validation
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    getValues,
+  } = useForm({
+    resolver: zodResolver(loginSchema),
+    mode: "onChange",
+    defaultValues: {
+      email: "",
+      password: "",
+    },
   });
 
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [apiError, setApiError] = useState("");
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    // Clear errors when user starts typing
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: "" });
-    }
-    if (apiError) {
-      setApiError("");
+  const handleResendVerification = async () => {
+    setResending(true);
+    try {
+      await authAPI.resendVerification(getValues("email"));
+      setResendSuccess("Verification email sent! Please check your inbox.");
+    } catch (error) {
+      setApiError(error.message || "Failed to resend verification email");
+    } finally {
+      setResending(false);
     }
   };
 
-  const validate = () => {
-    const newErrors = {};
-    if (!formData.email) newErrors.email = "Email is required";
-    if (!formData.password) newErrors.password = "Password is required";
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const onSubmit = async (data) => {
     setApiError("");
-    
-    if (validate()) {
-      setLoading(true);
+    setNeedsVerification(false);
+    setResendSuccess("");
+
+    try {
+      const user = await login(data.email, data.password, rememberMe);
       
-      try {
-        const response = await fetch("http://localhost:5000/api/login", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: formData.email,
-            password: formData.password,
-          }),
-        });
+      toast.success(`Welcome back, ${user?.username || "User"}!`);
 
-        const data = await response.json();
-
-        if (response.ok) {
-          // Store the token in localStorage
-          localStorage.setItem("access_token", data.data.access_token);
-          
-          console.log("Login success", data);
-          
-          // Navigate to home page after successful login
-          navigate("/home");
-        } else {
-          // Handle error responses
-          setApiError(data.message || "Login failed. Please try again.");
-        }
-      } catch (error) {
-        console.error("Login error:", error);
-        setApiError("Unable to connect to server. Please try again later.");
-      } finally {
-        setLoading(false);
+      // Navigate based on user role
+      if (user?.role === "admin") {
+        navigate("/admin");
+      } else if (user?.role === "technician") {
+        navigate("/technician");
+      } else {
+        navigate("/home");
+      }
+    } catch (error) {
+      if (error.message?.includes("verify your email")) {
+        setNeedsVerification(true);
+        setApiError("Please verify your email before logging in");
+      } else {
+        setApiError(error.message || "Login failed. Please check your credentials.");
       }
     }
   };
 
   return (
-    <div className="w-full min-h-screen bg-white px-8 md:px-10 py-10">
-      
-      {/* Page Title */}
-      <h1 className="text-3xl font-bold mb-10">Customer Login</h1>
-
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10">
-
-        {/* LEFT – Registered Customers */}
-        <div className="bg-[#f7f9ff] p-8 md:p-10 rounded-xl shadow-sm">
-          <h2 className="text-lg font-bold mb-2">Registered Customers</h2>
-          <p className="text-gray-600 text-sm mb-6">
-            If you have an account, log in with your email address.
-          </p>
-
-          <form onSubmit={handleSubmit}>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+        
+        {/* Left Side - Branding */}
+        <div className="hidden lg:flex flex-col items-center justify-center p-8">
+          <div className="text-center">
+            <div className="w-24 h-24 rounded-2xl bg-white/80 backdrop-blur flex items-center justify-center mx-auto mb-6 shadow-lg border border-gray-100">
+              <img src={logo} alt="ElectroByte logo" className="w-16 h-16 rounded-xl object-cover" />
+            </div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+              ElectroByte
+            </h1>
+            <p className="text-gray-600 text-lg mb-8">
+              Your trusted partner for laptops, repairs & tech solutions
+            </p>
             
-            {/* API Error Message */}
-            {apiError && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
-                {apiError}
+            <div className="space-y-4 text-left max-w-sm mx-auto">
+              <div className="flex items-center gap-4 p-4 bg-white/60 backdrop-blur rounded-xl">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <span className="text-xl">💻</span>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-800">Wide Selection</h3>
+                  <p className="text-sm text-gray-500">Premium laptops from top brands</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 p-4 bg-white/60 backdrop-blur rounded-xl">
+                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <span className="text-xl">🔧</span>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-800">Expert Repairs</h3>
+                  <p className="text-sm text-gray-500">Professional technicians at your service</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 p-4 bg-white/60 backdrop-blur rounded-xl">
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                  <span className="text-xl">🚚</span>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-800">Fast Delivery</h3>
+                  <p className="text-sm text-gray-500">Quick & reliable shipping</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Side - Login Form */}
+        <div className="w-full max-w-md mx-auto">
+          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+            {/* Mobile Logo */}
+            <div className="lg:hidden text-center mb-6">
+              <div className="w-16 h-16 rounded-xl bg-white/90 border border-gray-100 flex items-center justify-center mx-auto mb-3 shadow">
+                <img src={logo} alt="ElectroByte logo" className="w-10 h-10 rounded-lg object-cover" />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-800">ElectroByte</h1>
+            </div>
+
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome back!</h2>
+            <p className="text-gray-500 mb-6">Sign in to continue to your account</p>
+
+            {/* Success Message */}
+            {resendSuccess && (
+              <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-600 rounded-xl text-sm">
+                {resendSuccess}
               </div>
             )}
 
-            {/* Email */}
-            <div className="mb-5">
-              <label className="text-sm font-semibold block text-left">Email *</label>
-              <input
-                type="email"
-                name="email"
-                placeholder="Your Email"
-                value={formData.email}
-                onChange={handleChange}
-                disabled={loading}
-                className="w-full mt-2 p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100 disabled:cursor-not-allowed"
-              />
-              {errors.email && (
-                <p className="text-red-500 text-xs mt-1">{errors.email}</p>
-              )}
-            </div>
+            {/* API Error */}
+            {apiError && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <FaExclamationTriangle className="flex-shrink-0" />
+                  {apiError}
+                </div>
+                {needsVerification && (
+                  <button
+                    type="button"
+                    onClick={handleResendVerification}
+                    disabled={resending}
+                    className="mt-2 text-blue-600 hover:text-blue-700 underline text-sm disabled:opacity-50"
+                  >
+                    {resending ? "Sending..." : "Resend verification email"}
+                  </button>
+                )}
+              </div>
+            )}
 
-            {/* Password */}
-            <div className="mb-4">
-              <label className="text-sm font-semibold block text-left">Password *</label>
-              <input
-                type="password"
-                name="password"
-                placeholder="Your Password"
-                value={formData.password}
-                onChange={handleChange}
-                disabled={loading}
-                className="w-full mt-2 p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100 disabled:cursor-not-allowed"
-              />
-              {errors.password && (
-                <p className="text-red-500 text-xs mt-1">{errors.password}</p>
-              )}
-            </div>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                <div className="relative">
+                  <FaEnvelope className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="email"
+                    placeholder="you@example.com"
+                    {...register("email")}
+                    disabled={isSubmitting}
+                    className={`w-full pl-11 pr-4 py-3 border ${errors.email ? 'border-red-300 bg-red-50' : 'border-gray-200'} rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:bg-gray-100`}
+                  />
+                </div>
+                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+              </div>
 
-            {/* Forgot Password Link */}
-            <div className="mb-6 text-left">
-              <button 
-                type="button"
-                className="text-blue-600 text-sm hover:underline"
-                disabled={loading}
+              {/* Password */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                <div className="relative">
+                  <FaLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    {...register("password")}
+                    disabled={isSubmitting}
+                    className={`w-full pl-11 pr-12 py-3 border ${errors.password ? 'border-red-300 bg-red-50' : 'border-gray-200'} rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:bg-gray-100`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <FaEyeSlash /> : <FaEye />}
+                  </button>
+                </div>
+                {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
+              </div>
+
+              {/* Remember Me & Forgot Password */}
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                  />
+                  <span className="text-sm text-gray-600 group-hover:text-gray-800 transition-colors">
+                    Remember me
+                  </span>
+                </label>
+                <Link to="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                  Forgot password?
+                </Link>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-purple-700 focus:ring-4 focus:ring-blue-200 transition disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                Forgot Your Password?
+                {isSubmitting ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Signing in...
+                  </>
+                ) : (
+                  "Sign In"
+                )}
               </button>
+            </form>
+
+            {/* Divider */}
+            <div className="flex items-center my-6">
+              <div className="flex-1 border-t border-gray-200"></div>
+              <span className="px-4 text-sm text-gray-400">or</span>
+              <div className="flex-1 border-t border-gray-200"></div>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-blue-600 text-white px-6 py-2 rounded-full font-medium hover:bg-blue-700 transition disabled:bg-blue-400 disabled:cursor-not-allowed"
-            >
-              {loading ? "Signing In..." : "Sign In"}
-            </button>
-          </form>
-        </div>
+            {/* Create Account */}
+            <p className="text-center text-gray-600">
+              Don't have an account?{" "}
+              <Link to="/signup" className="text-blue-600 hover:text-blue-700 font-semibold">
+                Create one
+              </Link>
+            </p>
 
-        {/* RIGHT – New Customer */}
-        <div className="bg-[#f7f9ff] p-8 md:p-10 rounded-xl shadow-sm">
-          <h2 className="text-lg font-bold mb-2">New Customer?</h2>
-          <p className="text-gray-600 text-sm mb-6">
-            Creating an account has many benefits:
-          </p>
-
-          <ul className="text-gray-600 text-sm list-disc pl-5 space-y-2 mb-8 text-left">
-            <li>Check out faster</li>
-            <li>Keep more than one address</li>
-            <li>Track orders and more</li>
-          </ul>
-
-          <button 
-            onClick={() => navigate("/")}
-            className="bg-blue-600 text-white px-6 py-2 rounded-full font-medium hover:bg-blue-700 transition"
-          >
-            Create An Account
-          </button>
+            {/* Demo Credentials */}
+            <div className="mt-6 p-4 bg-blue-50 rounded-xl">
+              <p className="text-xs text-blue-600 font-medium mb-2">Demo Credentials:</p>
+              <p className="text-xs text-blue-800">Admin: admin@electrobyte.com / admin123</p>
+              <p className="text-xs text-blue-800">User: user@test.com / user123</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -3,10 +3,14 @@ import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { FaShoppingCart, FaStar, FaHeart, FaRegHeart, FaThLarge, FaList, FaSpinner, FaSearch, FaTimes, FaArrowLeft, FaHome } from "react-icons/fa";
 import { productAPI, categoryAPI, brandAPI, cartAPI, wishlistAPI } from "../services/api";
 import { useToast } from "../Component/Toast";
+import { getToken } from "../lib/storage";
+import Pagination, { usePagination } from "../Component/Pagination";
+import { API_ORIGIN } from "../lib/config";
+import { fetchRatingsForProducts, getRatingData } from "../lib/ratings";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = API_ORIGIN;
 
-
+// Helper to get image URL
 const getImageUrl = (url) => {
   if (!url) return null;
   if (url.startsWith("http")) return url;
@@ -62,7 +66,18 @@ const ProductCatalog = () => {
         brandAPI.getAll()
       ]);
       
-      setProducts(Array.isArray(productsRes) ? productsRes : productsRes.data || []);
+      const rawProducts = Array.isArray(productsRes) ? productsRes : productsRes.data || [];
+      const ratingMap = await fetchRatingsForProducts(rawProducts);
+      const productsWithRatings = rawProducts.map((product) => {
+        const ratingData = getRatingData(ratingMap, product.id);
+        return {
+          ...product,
+          rating: ratingData.averageRating,
+          reviewCount: ratingData.totalReviews,
+        };
+      });
+
+      setProducts(productsWithRatings);
       setCategories(Array.isArray(categoriesRes) ? categoriesRes : categoriesRes.data || []);
       setBrands(Array.isArray(brandsRes) ? brandsRes : brandsRes.data || []);
     } catch (err) {
@@ -76,14 +91,14 @@ const ProductCatalog = () => {
   };
 
   const getSampleProducts = () => [
-    { id: 1, name: "ASUS TUF Gaming F15", price: 145000, image_url: null, rating: 4.5, stock_quantity: 10 },
-    { id: 2, name: "HP Pavilion 15", price: 95000, image_url: null, rating: 4.0, stock_quantity: 15 },
-    { id: 3, name: "Dell Inspiron 14", price: 85000, image_url: null, rating: 4.2, stock_quantity: 8 },
-    { id: 4, name: "Lenovo IdeaPad 3", price: 75000, image_url: null, rating: 4.1, stock_quantity: 20 },
-    { id: 5, name: "Acer Nitro 5", price: 125000, image_url: null, rating: 4.6, stock_quantity: 5 },
-    { id: 6, name: "MSI GF63 Thin", price: 135000, image_url: null, rating: 4.4, stock_quantity: 7 },
-    { id: 7, name: "ASUS ROG Strix G15", price: 185000, image_url: null, rating: 4.8, stock_quantity: 3 },
-    { id: 8, name: "HP Victus 16", price: 155000, image_url: null, rating: 4.3, stock_quantity: 12 },
+    { id: 1, name: "ASUS TUF Gaming F15", price: 145000, image_url: null, rating: 4.5, reviewCount: 120, stock_quantity: 10 },
+    { id: 2, name: "HP Pavilion 15", price: 95000, image_url: null, rating: 4.0, reviewCount: 89, stock_quantity: 15 },
+    { id: 3, name: "Dell Inspiron 14", price: 85000, image_url: null, rating: 4.2, reviewCount: 65, stock_quantity: 8 },
+    { id: 4, name: "Lenovo IdeaPad 3", price: 75000, image_url: null, rating: 4.1, reviewCount: 150, stock_quantity: 20 },
+    { id: 5, name: "Acer Nitro 5", price: 125000, image_url: null, rating: 4.6, reviewCount: 200, stock_quantity: 5 },
+    { id: 6, name: "MSI GF63 Thin", price: 135000, image_url: null, rating: 4.4, reviewCount: 70, stock_quantity: 7 },
+    { id: 7, name: "ASUS ROG Strix G15", price: 185000, image_url: null, rating: 4.8, reviewCount: 55, stock_quantity: 3 },
+    { id: 8, name: "HP Victus 16", price: 155000, image_url: null, rating: 4.3, reviewCount: 90, stock_quantity: 12 },
   ];
 
   const getSampleCategories = () => [
@@ -104,7 +119,7 @@ const ProductCatalog = () => {
 
   const handleAddToCart = async (productId, e) => {
     e.stopPropagation();
-    const token = sessionStorage.getItem("access_token");
+    const token = getToken();
     if (!token) {
       navigate("/login");
       return;
@@ -137,7 +152,7 @@ const ProductCatalog = () => {
   };
 
   const fetchWishlist = async () => {
-    const token = sessionStorage.getItem("access_token");
+    const token = getToken();
     if (!token) return;
     
     try {
@@ -153,7 +168,7 @@ const ProductCatalog = () => {
 
   const toggleWishlist = async (e, productId) => {
     e.stopPropagation();
-    const token = sessionStorage.getItem("access_token");
+    const token = getToken();
     if (!token) {
       navigate("/login");
       return;
@@ -174,6 +189,55 @@ const ProductCatalog = () => {
     }
   };
 
+  const filterProducts = (products) => {
+    let filtered = products;
+    
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(p => 
+        p.name?.toLowerCase().includes(query) ||
+        p.description?.toLowerCase().includes(query) ||
+        p.Category?.name?.toLowerCase().includes(query) ||
+        p.Brand?.name?.toLowerCase().includes(query)
+      );
+    }
+    
+    if (selectedCategory) {
+      filtered = filtered.filter(p => p.category_id === selectedCategory);
+    }
+    if (selectedBrands.length > 0) {
+      filtered = filtered.filter(p => selectedBrands.includes(p.brand_id));
+    }
+    return filtered;
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    setSearchParams({});
+  };
+
+  const displayProducts = sortProducts(filterProducts(products));
+
+  // Pagination - 12 products per page for grid layout
+  const {
+    currentPage,
+    totalPages,
+    totalItems,
+    paginatedItems: paginatedProducts,
+    goToPage
+  } = usePagination(displayProducts, 12);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <FaSpinner className="animate-spin text-4xl text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading products...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -197,7 +261,27 @@ const ProductCatalog = () => {
             {searchQuery ? `Showing results for "${searchQuery}"` : 'Find the perfect laptop for your needs'}
           </p>
           
-        
+          {/* Search Bar */}
+          <div className="mt-6 max-w-xl">
+            <div className="relative">
+              <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search products..."
+                className="w-full pl-11 pr-10 py-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/30"
+              />
+              {searchQuery && (
+                <button
+                  onClick={clearSearch}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
+                >
+                  <FaTimes />
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -362,7 +446,11 @@ const ProductCatalog = () => {
               </div>
             ) : (
               <div className={`grid ${viewMode === "grid" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"} gap-6`}>
-                {displayProducts.map((product) => (
+                {paginatedProducts.map((product) => {
+                  const ratingValue = Number.isFinite(Number(product.rating)) ? Number(product.rating) : 0;
+                  const reviewCount = Number.isFinite(Number(product.reviewCount)) ? Number(product.reviewCount) : 0;
+
+                  return (
                   <div 
                     key={product.id} 
                     className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group cursor-pointer"
@@ -418,10 +506,10 @@ const ProductCatalog = () => {
                         {[...Array(5)].map((_, i) => (
                           <FaStar 
                             key={i} 
-                            className={`text-sm ${i < Math.floor(product.rating || 4) ? "text-yellow-400" : "text-gray-200"}`} 
+                            className={`text-sm ${i < Math.floor(ratingValue) ? "text-yellow-400" : "text-gray-200"}`} 
                           />
                         ))}
-                        <span className="text-xs text-gray-500 ml-2">({product.rating || 4.0})</span>
+                        <span className="text-xs text-gray-500 ml-2">({ratingValue.toFixed(1)}{reviewCount > 0 ? ` | ${reviewCount}` : ""})</span>
                       </div>
 
                       {/* Product Name */}
@@ -453,9 +541,20 @@ const ProductCatalog = () => {
                       </button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
+
+            {/* Pagination */}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={goToPage}
+              totalItems={totalItems}
+              itemsPerPage={12}
+              itemName="products"
+            />
 
             {/* Features Section */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-12">

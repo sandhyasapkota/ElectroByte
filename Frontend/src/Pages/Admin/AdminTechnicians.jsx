@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaSearch, FaUserPlus, FaEdit, FaTrash, FaCheck, FaTimes } from "react-icons/fa";
+import { FaUserPlus, FaEdit, FaTrash, FaTimes } from "react-icons/fa";
 import { adminAPI } from "../../services/api";
 import { useToast } from "../../Component/Toast";
 import { getUser } from "../../lib/storage";
@@ -10,37 +10,39 @@ const AdminTechnicians = () => {
   const navigate = useNavigate();
   const toast = useToast();
   const [technicians, setTechnicians] = useState([]);
-  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [selectedTechnician, setSelectedTechnician] = useState(null);
   const [formData, setFormData] = useState({
-    userId: "",
+    username: "",
+    email: "",
+    password: "",
+    phone: "",
     specialization: "",
     experience: ""
   });
 
   useEffect(() => {
-    checkAdminAccess();
-    fetchData();
+    const isAdmin = checkAdminAccess();
+    if (isAdmin) fetchData();
   }, []);
 
   const checkAdminAccess = () => {
     const user = getUser() || {};
     if (user.role !== "admin") {
       navigate("/login");
+      return false;
     }
+    return true;
   };
 
   const fetchData = async () => {
     try {
-      const [techRes, usersRes] = await Promise.all([
-        adminAPI.getAllTechnicians(),
-        adminAPI.getAllUsers()
+      const [techRes] = await Promise.all([
+        adminAPI.getAllTechnicians()
       ]);
       if (techRes.data) setTechnicians(techRes.data);
-      if (usersRes.data) setUsers(usersRes.data.filter(u => u.role !== 'admin'));
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -54,7 +56,15 @@ const AdminTechnicians = () => {
       if (editMode) {
         await adminAPI.updateTechnician(selectedTechnician.id, formData);
       } else {
-        await adminAPI.createTechnician(formData);
+        const payload = {
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+          phone: formData.phone,
+          specialization: formData.specialization,
+          experience: formData.experience
+        };
+        await adminAPI.createTechnician(payload);
       }
       fetchData();
       setShowModal(false);
@@ -82,7 +92,10 @@ const AdminTechnicians = () => {
   const openEditModal = (tech) => {
     setSelectedTechnician(tech);
     setFormData({
-      userId: tech.userId,
+      username: "",
+      email: "",
+      password: "",
+      phone: tech.User?.phone || "",
       specialization: tech.specialization || "",
       experience: tech.experience || ""
     });
@@ -91,7 +104,14 @@ const AdminTechnicians = () => {
   };
 
   const resetForm = () => {
-    setFormData({ userId: "", specialization: "", experience: "" });
+    setFormData({
+      username: "",
+      email: "",
+      password: "",
+      phone: "",
+      specialization: "",
+      experience: ""
+    });
     setSelectedTechnician(null);
     setEditMode(false);
   };
@@ -108,7 +128,7 @@ const AdminTechnicians = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex">
       <AdminSidebar active="Technicians" />
       
-      <main className="flex-1 ml-64 p-8">
+      <main className="flex-1 ml-0 lg:ml-64 p-8">
         <div className="mb-8 flex justify-between items-center">
           <div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Technician Management</h1>
@@ -192,22 +212,51 @@ const AdminTechnicians = () => {
               
               <form onSubmit={handleSubmit} className="p-6 space-y-4">
                 {!editMode && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Select User</label>
-                    <select
-                      value={formData.userId}
-                      onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
-                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                      required
-                    >
-                      <option value="">Select a user...</option>
-                      {users.filter(u => !technicians.find(t => t.userId === u.id)).map(user => (
-                        <option key={user.id} value={user.id}>
-                          {user.username} ({user.email})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                      <input
+                        type="text"
+                        value={formData.username}
+                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="Technician name"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="name@example.com"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                      <input
+                        type="password"
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="Create a password"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                      <input
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="98XXXXXXXX"
+                      />
+                    </div>
+                  </>
                 )}
 
                 <div>

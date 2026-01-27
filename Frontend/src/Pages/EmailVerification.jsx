@@ -19,28 +19,6 @@ const EmailVerification = () => {
     }
   }, [token]);
 
-
-  const handleResendVerification = async (e) => {
-    e.preventDefault();
-    if (!resendEmail) {
-      setResendMessage("Please enter your email address");
-      return;
-    }
-
-    setResending(true);
-    setResendMessage("");
-
-    try {
-      const response = await authAPI.resendVerification(resendEmail);
-      setResendMessage(response.message || "Verification email sent! Check your inbox.");
-      setResendEmail("");
-    } catch (error) {
-      setResendMessage(error.message || "Failed to send verification email.");
-    } finally {
-      setResending(false);
-    }
-  };
-
   const verifyEmail = async () => {
     try {
       console.log("Verifying email with token:", token);
@@ -71,6 +49,101 @@ const EmailVerification = () => {
       }
     }
   };
+
+  const handleResendVerification = async (e) => {
+    e.preventDefault();
+    if (!resendEmail) {
+      setResendMessage("Please enter your email address");
+      return;
+    }
+
+    setResending(true);
+    setResendMessage("");
+
+    try {
+      const response = await authAPI.resendVerification(resendEmail);
+      setResendMessage(response.message || "Verification email sent! Check your inbox.");
+      setResendEmail("");
+    } catch (error) {
+      setResendMessage(error.message || "Failed to send verification email.");
+    } finally {
+      setResending(false);
+    }
+  };
+
+  // If no token, show resend verification form
+  if (!token) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+            {/* Logo */}
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <FaEnvelope className="text-2xl text-white" />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-800">Verify Your Email</h1>
+              <p className="text-gray-500 mt-2">
+                Enter your email to receive a verification link
+              </p>
+            </div>
+
+            <form onSubmit={handleResendVerification} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={resendEmail}
+                  onChange={(e) => setResendEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                />
+              </div>
+
+              {resendMessage && (
+                <div className={`p-4 rounded-xl text-sm ${
+                  resendMessage.includes("sent") || resendMessage.includes("Check")
+                    ? "bg-green-50 text-green-600 border border-green-200"
+                    : "bg-red-50 text-red-600 border border-red-200"
+                }`}>
+                  {resendMessage}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={resending}
+                className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg transition disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {resending ? (
+                  <>
+                    <FaSpinner className="animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <FaEnvelope />
+                    Send Verification Email
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <Link
+                to="/login"
+                className="text-blue-600 hover:text-blue-700 font-medium"
+              >
+                Back to Login
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">

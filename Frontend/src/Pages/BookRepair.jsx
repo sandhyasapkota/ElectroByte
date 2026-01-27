@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { FaCalendar, FaClock, FaLaptop, FaWrench, FaTimes, FaCheck, FaArrowLeft, FaHome } from "react-icons/fa";
 import { appointmentAPI } from "../services/api";
 import { useToast } from "../Component/Toast";
+import { appointmentSchema } from "../validations";
 
 const BookRepair = () => {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ const BookRepair = () => {
   const [slotAvailability, setSlotAvailability] = useState({});
   const [maxPerSlot, setMaxPerSlot] = useState(5);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
   
   const [formData, setFormData] = useState({
     appointmentDate: "",
@@ -28,6 +30,11 @@ const BookRepair = () => {
 
   const deviceTypes = ["Laptop", "Desktop", "Mobile Phone", "Tablet", "Monitor", "Printer", "Other"];
   const timeSlots = ["09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM"];
+
+  const getFieldError = (field) => {
+    const error = formErrors[field];
+    return Array.isArray(error) ? error[0] : error;
+  };
 
   useEffect(() => {
     fetchAppointments();
@@ -82,6 +89,13 @@ const BookRepair = () => {
     e.preventDefault();
     setError("");
     setSuccess("");
+    setFormErrors({});
+
+    const validation = appointmentSchema.safeParse(formData);
+    if (!validation.success) {
+      setFormErrors(validation.error.flatten().fieldErrors);
+      return;
+    }
     
     try {
       const response = await appointmentAPI.book(formData);
@@ -297,17 +311,26 @@ const BookRepair = () => {
                     <input
                       type="date"
                       value={formData.appointmentDate}
-                      onChange={(e) => setFormData({...formData, appointmentDate: e.target.value, appointmentTime: ""})}
+                      onChange={(e) => {
+                        setFormData({ ...formData, appointmentDate: e.target.value, appointmentTime: "" });
+                        setFormErrors((prev) => ({ ...prev, appointmentDate: undefined, appointmentTime: undefined }));
+                      }}
                       min={new Date().toISOString().split('T')[0]}
                       className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       required
                     />
+                    {getFieldError("appointmentDate") && (
+                      <p className="text-xs text-red-600 mt-1">{getFieldError("appointmentDate")}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Time *</label>
                     <select
                       value={formData.appointmentTime}
-                      onChange={(e) => setFormData({...formData, appointmentTime: e.target.value})}
+                      onChange={(e) => {
+                        setFormData({ ...formData, appointmentTime: e.target.value });
+                        setFormErrors((prev) => ({ ...prev, appointmentTime: undefined }));
+                      }}
                       className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       required
                       disabled={!formData.appointmentDate || loadingSlots}
@@ -327,6 +350,9 @@ const BookRepair = () => {
                         );
                       })}
                     </select>
+                    {getFieldError("appointmentTime") && (
+                      <p className="text-xs text-red-600 mt-1">{getFieldError("appointmentTime")}</p>
+                    )}
                     {formData.appointmentDate && !loadingSlots && (
                       <div className="mt-2 flex flex-wrap gap-1">
                         {timeSlots.map(slot => {
@@ -357,7 +383,10 @@ const BookRepair = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Device Type *</label>
                     <select
                       value={formData.deviceType}
-                      onChange={(e) => setFormData({...formData, deviceType: e.target.value})}
+                      onChange={(e) => {
+                        setFormData({ ...formData, deviceType: e.target.value });
+                        setFormErrors((prev) => ({ ...prev, deviceType: undefined }));
+                      }}
                       className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       required
                     >
@@ -366,16 +395,25 @@ const BookRepair = () => {
                         <option key={type} value={type}>{type}</option>
                       ))}
                     </select>
+                    {getFieldError("deviceType") && (
+                      <p className="text-xs text-red-600 mt-1">{getFieldError("deviceType")}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
                     <input
                       type="text"
                       value={formData.deviceBrand}
-                      onChange={(e) => setFormData({...formData, deviceBrand: e.target.value})}
+                      onChange={(e) => {
+                        setFormData({ ...formData, deviceBrand: e.target.value });
+                        setFormErrors((prev) => ({ ...prev, deviceBrand: undefined }));
+                      }}
                       className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       placeholder="e.g., Dell, HP, Apple"
                     />
+                    {getFieldError("deviceBrand") && (
+                      <p className="text-xs text-red-600 mt-1">{getFieldError("deviceBrand")}</p>
+                    )}
                   </div>
                 </div>
 
@@ -383,12 +421,18 @@ const BookRepair = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Issue Description *</label>
                   <textarea
                     value={formData.issueDescription}
-                    onChange={(e) => setFormData({...formData, issueDescription: e.target.value})}
+                    onChange={(e) => {
+                      setFormData({ ...formData, issueDescription: e.target.value });
+                      setFormErrors((prev) => ({ ...prev, issueDescription: undefined }));
+                    }}
                     className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
                     rows="3"
                     placeholder="Describe the issue with your device..."
                     required
                   />
+                  {getFieldError("issueDescription") && (
+                    <p className="text-xs text-red-600 mt-1">{getFieldError("issueDescription")}</p>
+                  )}
                 </div>
 
                 <div>
@@ -396,7 +440,11 @@ const BookRepair = () => {
                     <input
                       type="checkbox"
                       checked={formData.pickupRequired}
-                      onChange={(e) => setFormData({...formData, pickupRequired: e.target.checked})}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setFormData({ ...formData, pickupRequired: checked });
+                        setFormErrors((prev) => ({ ...prev, pickupRequired: undefined, pickupAddress: checked ? prev.pickupAddress : undefined }));
+                      }}
                       className="w-4 h-4 text-blue-600 rounded"
                     />
                     <span className="text-sm text-gray-700">I need pickup service</span>
@@ -408,11 +456,17 @@ const BookRepair = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Pickup Address</label>
                     <textarea
                       value={formData.pickupAddress}
-                      onChange={(e) => setFormData({...formData, pickupAddress: e.target.value})}
+                      onChange={(e) => {
+                        setFormData({ ...formData, pickupAddress: e.target.value });
+                        setFormErrors((prev) => ({ ...prev, pickupAddress: undefined }));
+                      }}
                       className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
                       rows="2"
                       placeholder="Enter pickup address..."
                     />
+                    {getFieldError("pickupAddress") && (
+                      <p className="text-xs text-red-600 mt-1">{getFieldError("pickupAddress")}</p>
+                    )}
                   </div>
                 )}
 
