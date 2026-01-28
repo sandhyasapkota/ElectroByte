@@ -72,7 +72,7 @@ const AdminTechnicians = () => {
       toast.success(editMode ? "Technician updated successfully!" : "Technician added successfully!");
     } catch (error) {
       console.error("Error saving technician:", error);
-      toast.error("Failed to save technician");
+      toast.error(error?.message || "Failed to save technician");
     }
   };
 
@@ -84,7 +84,7 @@ const AdminTechnicians = () => {
         toast.success("Technician removed successfully!");
       } catch (error) {
         console.error("Error deleting technician:", error);
-        toast.error("Failed to remove technician");
+        toast.error(error?.message || "Failed to remove technician");
       }
     }
   };

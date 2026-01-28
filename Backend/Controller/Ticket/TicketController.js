@@ -4,7 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email || '');
 const isValidName = (name) => typeof name === 'string' && name.trim().length >= 2 && name.length <= 100;
 const isValidSubject = (subject) => typeof subject === 'string' && subject.trim().length >= 5 && subject.length <= 200;
-const isValidMessage = (message) => typeof message === 'string' && message.trim().length >= 10 && message.length <= 2000;
+const isValidMessage = (message) => typeof message === 'string' && message.trim().length >= 1 && message.length <= 2000;
+const isValidReplyMessage = (message) => typeof message === 'string' && message.trim().length >= 1 && message.length <= 2000;
 
 // Generate ticket number
 const generateTicketNumber = () => {
@@ -30,8 +31,8 @@ const createTicket = async (req, res) => {
     if (!isValidSubject(subject)) {
       return res.status(400).json({ error: "Subject must be 5-200 characters" });
     }
-    if (!isValidMessage(message)) {
-      return res.status(400).json({ error: "Message must be 10-2000 characters" });
+    if (!isValidReplyMessage(message)) {
+      return res.status(400).json({ error: "Message must be 1-2000 characters" });
     }
     
     const ticket = await Ticket.create({
@@ -222,8 +223,8 @@ const replyToTicket = async (req, res) => {
     
     // Add as chat reply
     if (adminReply) {
-      if (!isValidMessage(adminReply)) {
-        return res.status(400).json({ error: "Reply must be 10-2000 characters" });
+      if (!isValidReplyMessage(adminReply)) {
+        return res.status(400).json({ error: "Reply must be 1-2000 characters" });
       }
       await TicketReply.create({
         ticketId: id,

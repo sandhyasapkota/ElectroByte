@@ -60,6 +60,26 @@ const AboutProduct = () => {
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [loadingRelated, setLoadingRelated] = useState(false);
 
+  const renderDescription = (text, className) => {
+    const paragraphs = String(text || "")
+      .split(/\r?\n+/)
+      .map((paragraph) => paragraph.trim())
+      .filter(Boolean);
+
+    if (paragraphs.length === 0) {
+      return null;
+    }
+
+    return paragraphs.map((paragraph, index) => (
+      <p
+        key={`${index}-${paragraph.slice(0, 16)}`}
+        className={`${className} ${index === paragraphs.length - 1 ? "" : "mb-2"}`}
+      >
+        {paragraph}
+      </p>
+    ));
+  };
+
   useEffect(() => {
     fetchProduct();
     fetchReviews();
@@ -457,9 +477,7 @@ const AboutProduct = () => {
                     <h3 className="text-sm font-semibold text-gray-900 mb-2">
                       Description:
                     </h3>
-                    <p className="text-sm text-gray-600">
-                      {product.description}
-                    </p>
+                    {renderDescription(product.description, "text-sm text-gray-600")}
                   </div>
                 )}
 
@@ -634,9 +652,15 @@ const AboutProduct = () => {
                     <h2 className="text-xl font-bold text-gray-900 mb-4">
                       Product Details
                     </h2>
-                    <p className="text-gray-700 leading-relaxed mb-6">
-                      {product?.description || 'No description available.'}
-                    </p>
+                    {product?.description ? (
+                      <div className="mb-6">
+                        {renderDescription(product.description, "text-gray-700 leading-relaxed")}
+                      </div>
+                    ) : (
+                      <p className="text-gray-700 leading-relaxed mb-6">
+                        No description available.
+                      </p>
+                    )}
                     
                     {product?.features && product.features.length > 0 && (
                       <>

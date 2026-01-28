@@ -33,8 +33,8 @@ export const ticketSchema = z.object({
   message: z
     .string()
     .min(1, 'Message is required')
-    .min(10, 'Message must be at least 10 characters')
-    .max(2000, 'Message must be less than 2000 characters'),
+    .min(1, 'Message must be at least 1 characters')
+    .max(200, 'Message must be less than 200 characters'),
   category: z
     .enum(['general', 'order', 'product', 'technical', 'billing', 'other'])
     .default('general'),

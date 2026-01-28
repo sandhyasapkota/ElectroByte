@@ -158,6 +158,7 @@ const Checkout = () => {
       const response = await orderAPI.create(payload);
       setOrderId(response.data.orderId);
       setSuccess(true);
+      window.dispatchEvent(new Event("cartUpdated"));
     } catch (err) {
       setError(err.message);
     } finally {

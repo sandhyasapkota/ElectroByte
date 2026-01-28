@@ -307,6 +307,12 @@ const AdminProducts = () => {
     product.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    const aDate = new Date(a.createdAt || 0).getTime();
+    const bDate = new Date(b.createdAt || 0).getTime();
+    return bDate - aDate;
+  });
+
   // Pagination
   const {
     currentPage,
@@ -314,7 +320,7 @@ const AdminProducts = () => {
     totalItems,
     paginatedItems: paginatedProducts,
     goToPage
-  } = usePagination(filteredProducts, 10);
+  } = usePagination(sortedProducts, 10);
 
   if (loading) {
     return (
@@ -406,8 +412,8 @@ const AdminProducts = () => {
                 paginatedProducts.map((product) => (
                   <tr key={product.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                      <div className="flex items-start gap-3">
+                        <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                           {product.image_url || (product.images && product.images[0]) ? (
                             <img 
                               src={getImageUrl(product.image_url || product.images[0]?.imageUrl)} 
@@ -418,22 +424,25 @@ const AdminProducts = () => {
                             <FaBox className="text-gray-400" />
                           )}
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <p className="font-medium">{product.name}</p>
-                          <p className="text-sm text-gray-500 line-clamp-1">{product.description}</p>
+                          <p className="text-sm text-gray-500 line-clamp-2 break-words">{product.description}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">{product.Category?.name || '-'}</td>
                     <td className="px-6 py-4">{product.Brand?.name || '-'}</td>
-                    <td className="px-6 py-4 font-medium">Rs. {parseFloat(product.price).toLocaleString()}</td>
+                    <td className="px-6 py-4 font-medium whitespace-nowrap">
+                      Rs. {parseFloat(product.price).toLocaleString()}
+                    </td>
                     <td className="px-6 py-4">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full whitespace-nowrap ${
                         product.stock_quantity > 10 ? 'bg-green-100 text-green-600' :
                         product.stock_quantity > 0 ? 'bg-yellow-100 text-yellow-600' :
                         'bg-red-100 text-red-600'
                       }`}>
-                        {product.stock_quantity || 0} units
+                        <span className="font-semibold">{product.stock_quantity || 0}</span>
+                        <span>units</span>
                       </span>
                     </td>
                     <td className="px-6 py-4">

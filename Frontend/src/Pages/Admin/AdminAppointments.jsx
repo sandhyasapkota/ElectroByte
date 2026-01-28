@@ -89,8 +89,10 @@ const AdminAppointments = () => {
   };
 
   const filteredAppointments = appointments.filter(apt => {
-    const matchesSearch = apt.deviceType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          apt.User?.username?.toLowerCase().includes(searchTerm.toLowerCase());
+    const normalizedSearch = searchTerm.toLowerCase();
+    const matchesSearch = apt.deviceType?.toLowerCase().includes(normalizedSearch) ||
+                          apt.User?.username?.toLowerCase().includes(normalizedSearch) ||
+                          apt.Repair?.repairToken?.toLowerCase().includes(normalizedSearch);
     
     // Check both appointment status and repair status
     const repairStatuses = ['ready_pickup', 'in_progress', 'waiting_parts', 'diagnosing', 'received'];
@@ -107,6 +109,12 @@ const AdminAppointments = () => {
     return matchesSearch && matchesStatus;
   });
 
+  const sortedAppointments = [...filteredAppointments].sort((a, b) => {
+    const aDate = new Date(a.createdAt || 0).getTime();
+    const bDate = new Date(b.createdAt || 0).getTime();
+    return bDate - aDate;
+  });
+
   // Pagination
   const {
     currentPage,
@@ -114,7 +122,7 @@ const AdminAppointments = () => {
     totalItems,
     paginatedItems: paginatedAppointments,
     goToPage
-  } = usePagination(filteredAppointments, 10);
+  } = usePagination(sortedAppointments, 10);
     
 
 
@@ -237,7 +245,7 @@ const AdminAppointments = () => {
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by device or customer..."
+              placeholder="Search by device, customer, or repair ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -269,12 +277,13 @@ const AdminAppointments = () => {
         {/* Appointments Table */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px]">
+            <table className="w-full min-w-[980px]">
             <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Device</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date/Time</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Repair ID</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Appt Status</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Repair Status</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Technician</th>
@@ -284,7 +293,7 @@ const AdminAppointments = () => {
             <tbody className="divide-y divide-gray-200">
               {paginatedAppointments.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
                     <FaTools className="mx-auto text-4xl mb-2 text-gray-300" />
                     No appointments found
                   </td>
@@ -303,6 +312,13 @@ const AdminAppointments = () => {
                     <td className="px-6 py-4">
                       <p className="font-medium">{new Date(apt.appointmentDate).toLocaleDateString()}</p>
                       <p className="text-sm text-gray-500">{apt.appointmentTime}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      {apt.Repair?.repairToken ? (
+                        <span className="font-medium text-sm">{apt.Repair.repairToken}</span>
+                      ) : (
+                        <span className="text-gray-400 text-xs">-</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(apt.status)}`}>
@@ -354,7 +370,10 @@ const AdminAppointments = () => {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
               <div className="p-6 border-b flex justify-between items-center">
-                <h2 className="text-xl font-bold">Appointment Details</h2>
+                <h2 className="text-xl font-bold">
+                  Appointment Details
+                  {selectedApt?.Repair?.repairToken ? ` · ${selectedApt.Repair.repairToken}` : ""}
+                </h2>
                 <button onClick={() => setShowModal(false)} className="text-gray-500 hover:text-gray-700">
                   <FaTimes />
                 </button>
@@ -362,6 +381,10 @@ const AdminAppointments = () => {
               
               <div className="p-6 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Tracking ID</p>
+                    <p className="font-medium">{selectedApt?.Repair?.repairToken || "-"}</p>
+                  </div>
                   <div>
                     <p className="text-sm text-gray-500">Customer</p>
                     <p className="font-medium">{selectedApt.User?.username}</p>
