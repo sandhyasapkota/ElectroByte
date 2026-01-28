@@ -101,6 +101,12 @@ const AdminOrders = () => {
     return matchesSearch && matchesStatus;
   });
 
+  const sortedOrders = [...filteredOrders].sort((a, b) => {
+    const aDate = new Date(a.createdAt || 0).getTime();
+    const bDate = new Date(b.createdAt || 0).getTime();
+    return bDate - aDate;
+  });
+
   // Pagination
   const {
     currentPage,
@@ -108,7 +114,7 @@ const AdminOrders = () => {
     totalItems,
     paginatedItems: paginatedOrders,
     goToPage
-  } = usePagination(filteredOrders, 10);
+  } = usePagination(sortedOrders, 10);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -167,21 +173,23 @@ const AdminOrders = () => {
 
         {/* Orders Table */}
         <div className="bg-white rounded-xl md:rounded-2xl shadow-md md:shadow-lg overflow-x-auto border border-gray-100">
-          <table className="min-w-[700px] w-full">
+          <table className="min-w-[980px] w-full">
             <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Items</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ordered Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estimated Delivery</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {paginatedOrders.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
                     <FaBox className="mx-auto text-4xl mb-2 text-gray-300" />
                     No orders found
                   </td>
@@ -194,6 +202,29 @@ const AdminOrders = () => {
                       <p className="font-medium">{order.User?.username || 'Unknown User'}</p>
                       <p className="text-sm text-gray-500">{order.User?.email || order.contactPhone}</p>
                     </td>
+                    <td className="px-6 py-4">
+                      {order.OrderItems?.length ? (
+                        <div className="flex items-center">
+                          <div
+                            className="w-10 h-10 rounded-lg border border-gray-200 bg-gray-100 overflow-hidden"
+                            title={order.OrderItems[0]?.productName || order.OrderItems[0]?.Product?.name || "Product"}
+                          >
+                            <img
+                              src={getProductImageUrl(order.OrderItems[0])}
+                              alt={order.OrderItems[0]?.productName || order.OrderItems[0]?.Product?.name || "Product"}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          {order.OrderItems.length > 1 && (
+                            <span className="ml-2 px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                              +{order.OrderItems.length - 1}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">No items</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 font-medium">Rs. {parseFloat(order.totalAmount).toLocaleString()}</td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(order.status)}`}>
@@ -202,6 +233,11 @@ const AdminOrders = () => {
                     </td>
                     <td className="px-6 py-4 text-gray-600">
                       {new Date(order.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-gray-600">
+                      {order.estimatedDeliveryDate
+                        ? new Date(order.estimatedDeliveryDate).toLocaleDateString()
+                        : "-"}
                     </td>
                     <td className="px-6 py-4">
                       <button

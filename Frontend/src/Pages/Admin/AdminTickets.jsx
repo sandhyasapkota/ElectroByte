@@ -49,12 +49,14 @@ const AdminTickets = () => {
 
   const handleReply = async (e) => {
     e?.preventDefault();
-    if (!replyText.trim() || sending) return;
+    const trimmed = replyText.trim();
+    if (sending) return;
+    if (!trimmed) return;
     
     setSending(true);
     try {
       // Use addReply (POST) for chat-style replies - backend detects admin from token
-      await ticketAPI.addReply(selectedTicket.id, replyText);
+      await ticketAPI.addReply(selectedTicket.id, trimmed);
       // Fetch the updated ticket with replies
       const response = await ticketAPI.getById(selectedTicket.id);
       if (response.data) {
@@ -66,7 +68,7 @@ const AdminTickets = () => {
       toast.success("Reply sent successfully!");
     } catch (error) {
       console.error("Error replying to ticket:", error);
-      toast.error("Failed to send reply");
+      toast.error(error?.message || "Failed to send reply");
     } finally {
       setSending(false);
     }

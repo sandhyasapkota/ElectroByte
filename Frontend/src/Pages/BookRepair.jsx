@@ -502,15 +502,16 @@ const TrackRepair = () => {
     
     try {
       const response = await appointmentAPI.getRepairStatus(token);
-      setRepair(response.data);
+      const repairData = response?.data ?? response;
+      setRepair(repairData);
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || "Repair not found. Please check your token.");
     } finally {
       setLoading(false);
     }
   };
 
-  const statusSteps = ['received', 'diagnosing', 'in_progress', 'completed', 'ready_pickup'];
+  const statusSteps = ['received', 'diagnosing', 'in_progress', 'waiting_parts', 'completed', 'ready_pickup'];
   
   const getStepIndex = (status) => {
     const index = statusSteps.indexOf(status);
