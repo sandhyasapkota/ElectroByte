@@ -2,6 +2,10 @@ import { jest } from "@jest/globals";
 import request from "supertest";
 import express from "express";
 
+jest.unstable_mockModule("../Middleware/token-middleware.js", () => ({
+  authenticateToken: (req, res, next) => next(),
+}));
+
 jest.unstable_mockModule("../Controller/index.js", () => ({
   getAddresses: (req, res) => res.status(200).json({ ok: true }),
   addAddress: (req, res) => res.status(201).json({ ok: true }),

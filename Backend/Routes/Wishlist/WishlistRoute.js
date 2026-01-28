@@ -6,8 +6,11 @@ import {
   toggleWishlist,
   checkWishlist 
 } from "../../Controller/Wishlist/WishlistController.js";
+import { authenticateToken } from "../../Middleware/token-middleware.js";
 
 const router = express.Router();
+
+router.use(authenticateToken);
 
 // Get user's wishlist
 router.get("/", getWishlist);

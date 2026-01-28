@@ -5,12 +5,14 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { getAllUsers, updateUserById, deleteUserById, createUser, getUserById, updateCurrentUser } from '../../Controller/index.js';
 import { uploadProfileImage } from '../../Controller/User/ImageController.js';
-import { requireAdmin } from '../../Middleware/token-middleware.js';
+import { authenticateToken, requireAdmin } from '../../Middleware/token-middleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const router = express.Router();
+
+router.use(authenticateToken);
 
 // Create profiles uploads directory if it doesn't exist
 const profileUploadsDir = path.join(__dirname, '../../uploads/profiles');

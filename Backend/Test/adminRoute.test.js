@@ -3,6 +3,7 @@ import request from "supertest";
 import express from "express";
 
 jest.unstable_mockModule("../Middleware/token-middleware.js", () => ({
+  authenticateToken: (req, res, next) => next(),
   requireAdmin: (req, res, next) => next(),
 }));
 

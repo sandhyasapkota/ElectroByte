@@ -7,9 +7,11 @@ import {
   getAllOrders, 
   updateOrderStatus 
 } from '../../Controller/index.js';
-import { requireAdmin } from '../../Middleware/token-middleware.js';
+import { authenticateToken, requireAdmin } from '../../Middleware/token-middleware.js';
 
 const router = express.Router();
+
+router.use(authenticateToken);
 
 // User routes
 router.post('/', createOrder);

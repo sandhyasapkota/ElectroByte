@@ -12,10 +12,11 @@ import {
   promoteToTechnician,
   deleteUser
 } from '../../Controller/index.js';
-import { requireAdmin } from '../../Middleware/token-middleware.js';
+import { authenticateToken, requireAdmin } from '../../Middleware/token-middleware.js';
 
 const router = express.Router();
 
+router.use(authenticateToken);
 router.use(requireAdmin);
 
 router.get('/dashboard', getDashboardStats);
