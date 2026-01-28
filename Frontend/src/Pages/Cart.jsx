@@ -33,6 +33,10 @@ const Cart = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const notifyCartUpdated = () => {
+    window.dispatchEvent(new Event("cartUpdated"));
+  };
+
   useEffect(() => {
     const token = getToken();
     if (!token) {
@@ -61,7 +65,8 @@ const Cart = () => {
     if (quantity < 1) return;
     try {
       await cartAPI.update(id, quantity);
-      fetchCart();
+      await fetchCart();
+      notifyCartUpdated();
     } catch (err) {
       setError(err.message);
     }
@@ -70,7 +75,8 @@ const Cart = () => {
   const removeItem = async (id) => {
     try {
       await cartAPI.remove(id);
-      fetchCart();
+      await fetchCart();
+      notifyCartUpdated();
       toast.success("Item removed from cart!");
     } catch (err) {
       toast.error(err.message || "Failed to remove item");
@@ -82,6 +88,7 @@ const Cart = () => {
       await cartAPI.clear();
       setCartItems([]);
       setSubtotal(0);
+      notifyCartUpdated();
       toast.success("Cart cleared!");
     } catch (err) {
       toast.error(err.message || "Failed to clear cart");

@@ -23,6 +23,11 @@ const authenticateToken = (req, res, next) => {
     if (req.path.startsWith('/api/verify-email/') || req.path.startsWith('/api/reset-password/')) {
         return next();
     }
+
+    // Allow public repair tracking by token (GET /api/appointments/repair/:token)
+    if (req.method === 'GET' && /^\/api\/appointments\/repair\/[^/]+$/.test(req.path)) {
+        return next();
+    }
     
     // Allow public paths with GET method for products, categories, brands, faqs
     if (isPublicPath && (req.method === 'GET' || req.path === '/api/login' || req.path === '/api/register' || req.path === '/api/forgot-password' || req.path === '/api/resend-verification' || req.path === '/api/tickets/contact')) {

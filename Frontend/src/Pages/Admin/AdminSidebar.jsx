@@ -71,57 +71,59 @@ const AdminSidebar = ({ active }) => {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0`}
       >
-        <div className="p-4 flex items-center justify-between border-b border-gray-700/50">
-          <div className="flex items-center gap-2">
-            <img src={logo} alt="ElectroByte" className="w-8 h-8 rounded-full object-cover" />
-            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-              ElectroByte
-            </h1>
+        <div className="flex flex-col h-full">
+          <div className="p-4 flex items-center justify-between border-b border-gray-700/50">
+            <div className="flex items-center gap-2">
+              <img src={logo} alt="ElectroByte" className="w-8 h-8 rounded-full object-cover" />
+              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                ElectroByte
+              </h1>
+            </div>
+            {isMobile && (
+              <button onClick={() => setSidebarOpen(false)} className="p-2 hover:bg-gray-700/50 rounded-lg transition-all">
+                <FaTimes />
+              </button>
+            )}
           </div>
-          {isMobile && (
-            <button onClick={() => setSidebarOpen(false)} className="p-2 hover:bg-gray-700/50 rounded-lg transition-all">
-              <FaTimes />
-            </button>
-          )}
-        </div>
-      
-      <nav className="mt-6 px-2">
-        {menuItems.map((item) => (
-          <Link
-            key={item.name}
-            to={item.path}
-            onClick={() => {
-              if (isMobile) setSidebarOpen(false);
-            }}
-            className={`flex items-center gap-3 px-4 py-3 my-1 rounded-xl hover:bg-gradient-to-r hover:from-blue-600/20 hover:to-purple-600/20 transition-all duration-300 ${
-              isActive(item) ? 'bg-gradient-to-r from-blue-600/30 to-purple-600/30 border-l-4 border-blue-500' : ''
-            }`}
-          >
-            <item.icon className={`text-lg ${isActive(item) ? 'text-blue-400' : 'text-gray-400'}`} />
-            <span className="font-medium">{item.name}</span>
-          </Link>
-        ))}
         
-        <div className="border-t border-gray-700/50 mt-6 pt-4">
-          <Link
-            to="/"
-            onClick={() => {
-              if (isMobile) setSidebarOpen(false);
-            }}
-            className="flex items-center gap-3 px-4 py-3 my-1 rounded-xl hover:bg-gray-700/50 transition-all"
-          >
-            <FaHome className="text-lg text-green-400" />
-            <span>Back to Site</span>
-          </Link>
-          <button 
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 my-1 rounded-xl hover:bg-red-600/20 transition-all w-full text-left text-red-400"
-          >
-            <FaSignOutAlt className="text-lg" />
-            <span>Logout</span>
-          </button>
+          <nav className="flex-1 overflow-y-auto px-2 pt-4 pb-6">
+            {menuItems.map((item) => (
+              <Link
+                key={item.name}
+                to={item.path}
+                onClick={() => {
+                  if (isMobile) setSidebarOpen(false);
+                }}
+                className={`flex items-center gap-3 px-4 py-3 my-1 rounded-xl hover:bg-gradient-to-r hover:from-blue-600/20 hover:to-purple-600/20 transition-all duration-300 ${
+                  isActive(item) ? 'bg-gradient-to-r from-blue-600/30 to-purple-600/30 border-l-4 border-blue-500' : ''
+                }`}
+              >
+                <item.icon className={`text-lg ${isActive(item) ? 'text-blue-400' : 'text-gray-400'}`} />
+                <span className="font-medium">{item.name}</span>
+              </Link>
+            ))}
+            
+            <div className="border-t border-gray-700/50 mt-6 pt-4">
+              <Link
+                to="/"
+                onClick={() => {
+                  if (isMobile) setSidebarOpen(false);
+                }}
+                className="flex items-center gap-3 px-4 py-3 my-1 rounded-xl hover:bg-gray-700/50 transition-all"
+              >
+                <FaHome className="text-lg text-green-400" />
+                <span>Back to Site</span>
+              </Link>
+              <button 
+                onClick={handleLogout}
+                className="flex items-center gap-3 px-4 py-3 my-1 rounded-xl hover:bg-red-600/20 transition-all w-full text-left text-red-400"
+              >
+                <FaSignOutAlt className="text-lg" />
+                <span>Logout</span>
+              </button>
+            </div>
+          </nav>
         </div>
-      </nav>
       </aside>
     </>
   );

@@ -242,7 +242,10 @@ const createTechnician = async (req, res) => {
       email,
       password: hashedPassword,
       phone,
-      role: 'technician'
+      role: 'technician',
+      isEmailVerified: true,
+      emailVerificationToken: null,
+      emailVerificationExpires: null
     });
     
     // Create technician record
@@ -393,6 +396,9 @@ const promoteToTechnician = async (req, res) => {
     
     // Update user role
     user.role = 'technician';
+    user.isEmailVerified = true;
+    user.emailVerificationToken = null;
+    user.emailVerificationExpires = null;
     await user.save();
     
     res.status(200).json({ 

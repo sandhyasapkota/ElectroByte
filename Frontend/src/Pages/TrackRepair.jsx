@@ -26,11 +26,13 @@ const TrackRepair = () => {
     
     try {
       const response = await appointmentAPI.getRepairStatus(token.trim());
-      setRepair(response.data);
+      const repairData = response?.data ?? response;
+      setRepair(repairData);
       toast.success("Repair status found!");
     } catch (err) {
-      setError("Repair not found. Please check your token.");
-      toast.error("Repair not found. Please check your token.");
+      const message = err?.message || "Repair not found. Please check your token.";
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
