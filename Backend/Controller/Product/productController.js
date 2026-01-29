@@ -173,6 +173,10 @@ const getAllProducts = async (req, res) => {
 const getProductById = async (req, res) => {
   try {
     const { id } = req.params;
+    const parsedId = Number(id);
+    if (!Number.isInteger(parsedId) || parsedId <= 0) {
+      return res.status(400).json({ error: "Invalid product id" });
+    }
     const product = await Product.findByPk(id, {
       include: [
         { model: Category },
