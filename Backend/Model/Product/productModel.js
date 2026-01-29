@@ -1,7 +1,7 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../../Database/db.js";
 
-const Product = sequelize.define(
+export const Product = sequelize.define(
   "Product",
   {
     id: {
@@ -63,4 +63,3 @@ const Product = sequelize.define(
   }
 );
 
-export { Product };
