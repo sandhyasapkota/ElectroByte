@@ -6,7 +6,7 @@ export * from './Brand/BrandController.js';
 export * from './Cart/CartController.js';
 export * from './Order/OrderController.js';
 export * from './Address/AddressController.js';
-export * from './Appointment/AppointmentController.js';
+export * from './Appointment/appointmentController.js';
 export * from './Ticket/TicketController.js';
 export * from './FAQ/FAQController.js';
 export * from './Feedback/FeedbackController.js';

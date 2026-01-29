@@ -9,12 +9,15 @@ import {
   replyToTicket, 
   updateTicketStatus 
 } from '../../Controller/index.js';
-import { requireAdmin } from '../../Middleware/token-middleware.js';
+import { authenticateToken, requireAdmin } from '../../Middleware/token-middleware.js';
 
 const router = express.Router();
 
 // Public route
 router.post('/contact', submitContactForm);
+
+// Require auth for all routes below
+router.use(authenticateToken);
 
 // User routes
 router.post('/', createTicket);

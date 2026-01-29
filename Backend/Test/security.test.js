@@ -3,7 +3,7 @@ import request from "supertest";
 let app;
 
 beforeAll(async () => {
-  app = (await import("../app.js")).default;
+  app = (await import("../index.js")).default;
 });
 
 describe("Security Tests", () => {
