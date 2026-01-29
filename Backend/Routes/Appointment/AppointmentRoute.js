@@ -13,17 +13,21 @@ import {
   updateAppointmentStatus,
   getSlotAvailability
 } from '../../Controller/index.js';
-import { requireAdmin, requireTechnician } from '../../Middleware/token-middleware.js';
+import { authenticateToken, requireAdmin, requireTechnician } from '../../Middleware/token-middleware.js';
 
 const router = express.Router();
 
 // User routes
 router.get('/slot-availability', getSlotAvailability);
+router.get('/repair/:token', getRepairStatus);
+
+// Require auth for the routes below
+router.use(authenticateToken);
+
 router.post('/', bookAppointment);
 router.get('/my-appointments', getMyAppointments);
 router.put('/:id', editAppointment);
 router.put('/:id/cancel', cancelAppointment);
-router.get('/repair/:token', getRepairStatus);
 router.get('/repair-history', getRepairHistory);
 
 // Admin routes
